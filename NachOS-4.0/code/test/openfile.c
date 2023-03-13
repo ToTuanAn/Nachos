@@ -1,8 +1,7 @@
 #include "syscall.h"
-#define MAX_LENGTH 32
 
 int main()
 {   
-    Create("hello.txt");
+    int openFileId = Open("hello.txt", 0);
     return 0;
 }

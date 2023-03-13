@@ -163,6 +163,12 @@ createfile: createfile.o start.o
 	$(LD) $(LDFLAGS) start.o createfile.o -o createfile.coff
 	$(COFF2NOFF) createfile.coff createfile
 
+openfile.o: openfile.c
+	$(CC) $(CFLAGS) -c openfile.c
+openfile: openfile.o start.o
+	$(LD) $(LDFLAGS) start.o openfile.o -o openfile.coff
+	$(COFF2NOFF) openfile.coff openfile
+
 clean:
 	$(RM) -f *.o *.ii
 	$(RM) -f *.coff

@@ -140,6 +140,17 @@ FileSystem::FileSystem(bool format)
         freeMapFile = new OpenFile(FreeMapSector);
         directoryFile = new OpenFile(DirectorySector);
     }
+
+    openf = new OpenFile*[15];
+	index = 0;
+	for (int i = 0; i < 15; ++i)
+	{
+		openf[i] = NULL;
+	}
+	openf[index++] = this->Open("stdin", 2);
+	openf[index++] = this->Open("stdout", 3);
+	this->Create("stdin", 0);
+	this->Create("stdout", 0);
 }
 
 //----------------------------------------------------------------------
@@ -239,6 +250,23 @@ FileSystem::Open(char *name)
     return openFile;				// return NULL if not found
 }
 
+
+OpenFile* FileSystem::Open(char *name, int type)
+{
+	int freeSlot = this->FindFreeSlot();
+	Directory *directory = new Directory(NumDirEntries);
+	OpenFile *openFile = NULL;
+	int sector;
+
+	// DEBUG('f', "Opening file %s\n", name);
+	directory->FetchFrom(directoryFile);
+	sector = directory->Find(name);
+	if (sector >= 0)
+		openf[freeSlot] = new OpenFile(sector, type);	// name was found in directory 
+	delete directory;
+	return openf[freeSlot];				// return NULL if not found
+}
+
 //----------------------------------------------------------------------
 // FileSystem::Remove
 // 	Delete a file from the file system.  This requires:
@@ -336,5 +364,23 @@ FileSystem::Print()
     delete freeMap;
     delete directory;
 } 
+
+
+//----------------------------------------------------------------------
+// FileSystem::FindFreeSlot
+// 	Find free slot to open a file:
+//	  for each file in the directory,
+//	      check NULL
+//----------------------------------------------------------------------
+
+
+int FileSystem::FindFreeSlot()
+{
+	for(int i = 2; i < 20; i++)
+	{
+		if(openf[i] == NULL) return i;		
+	}
+	return -1;
+}
 
 #endif // FILESYS_STUB

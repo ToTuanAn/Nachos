@@ -29,7 +29,10 @@
 					// See definitions listed under #else
 class OpenFile {
   public:
-    OpenFile(int f) { file = f; currentOffset = 0; }	// open the file
+    int type;
+
+    OpenFile(int f) { file = f; currentOffset = 0; type = 0;}	// open the file	
+	OpenFile(int f, int t) { file = f; currentOffset = 0; type = t; }	//open file with type
     ~OpenFile() { Close(file); }			// close the file
 
     int ReadAt(char *into, int numBytes, int position) { 
@@ -56,7 +59,7 @@ class OpenFile {
     
   private:
     int file;
-    int currentOffset;
+    int currentOffset;	
 };
 
 #else // FILESYS
@@ -66,6 +69,7 @@ class OpenFile {
   public:
     OpenFile(int sector);		// Open a file whose header is located
 					// at "sector" on the disk
+	OpenFile(int sector, int type); 
     ~OpenFile();			// Close the file
 
     void Seek(int position); 		// Set the position from which to 
@@ -88,6 +92,7 @@ class OpenFile {
 					// end of file, tell, lseek back 
     
   private:
+  	int type;
     FileHeader *hdr;			// Header for this file 
     int seekPosition;			// Current position within the file
 };

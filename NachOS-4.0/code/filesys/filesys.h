@@ -42,7 +42,21 @@
 				// implementation is available
 class FileSystem {
   public:
-    FileSystem() {}
+  	OpenFile** openf; //check file is opened
+	int index;
+
+	FileSystem(bool format) {
+		openf = new OpenFile*[20];
+		index = 0;
+		for (int i = 0; i < 20; ++i)
+		{
+			openf[i] = NULL;
+		}   
+		this->Create("stdin");
+		this->Create("stdout");
+		openf[index++] = this->Open("stdin", 1);
+		openf[index++] = this->Open("stdout", 1);  
+	}
 
     bool Create(char *name) {
 		int fileDescriptor = OpenForWrite(name);
@@ -59,6 +73,23 @@ class FileSystem {
 	  return new OpenFile(fileDescriptor);
       }
 
+	OpenFile* Open(char *name, int type) {
+		int fileDescriptor = OpenForReadWrite(name, FALSE);
+
+		if (fileDescriptor == -1) return NULL;
+		//index++;
+		return new OpenFile(fileDescriptor, type);
+	}
+
+	int FindFreeSlot()
+	{
+		for(int i = 2; i < 20; i++)
+		{
+			if(openf[i] == NULL) return i;		
+		}
+		return -1;
+	}
+
     bool Remove(char *name) { return Unlink(name) == 0; }
 
 };
@@ -66,6 +97,9 @@ class FileSystem {
 #else // FILESYS
 class FileSystem {
   public:
+  	OpenFile** openf; //check if file is opened
+	int index;
+
     FileSystem(bool format);		// Initialize the file system.
 					// Must be called *after* "synchDisk" 
 					// has been initialized.
@@ -78,11 +112,25 @@ class FileSystem {
 
     OpenFile* Open(char *name); 	// Open a file (UNIX open)
 
+	OpenFile* Open(char *name, int type); 	// Open a file (UNIX open)
+
     bool Remove(char *name);  		// Delete a file (UNIX unlink)
 
     void List();			// List all the files in the file system
 
     void Print();			// List all the files and their contents
+
+	int FindFreeSlot();
+
+	//destructor file system
+	~FileSystem()
+	{
+		for (int i = 0; i < 20; ++i)
+		{
+			if (openf[i] != NULL) delete openf[i];
+		}
+		delete[] openf;
+	}
 
   private:
    OpenFile* freeMapFile;		// Bit map of free disk blocks,

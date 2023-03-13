@@ -51,12 +51,12 @@ char* User2System(int virtAddr,int limit)
 		return kernelBuf;
 
 	memset(kernelBuf,0,limit+1);
-	//printf("\n Filename u2s:");
+
 	for (i = 0 ; i < limit ;i++)
 	{
 		kernel->machine->ReadMem(virtAddr+i,1,&oneChar);
 		kernelBuf[i] = (char)oneChar;
-		//printf("%c",kernelBuf[i]);
+
 		if (oneChar == 0)
 			break;
 	}
@@ -109,6 +109,8 @@ ExceptionHandler(ExceptionType which)
 
     DEBUG(dbgSys, "Received Exception " << which << " type: " << type << "\n");
 
+	cerr << "Received Exception " << which << " type: " << type << "\n";
+
     switch (which) {
 
     	case SyscallException:
@@ -120,7 +122,7 @@ ExceptionHandler(ExceptionType which)
 					
 					DEBUG(dbgSys, "Shutdown, initiated by user program.\n");
 					SysHalt();
-					ASSERTNOTREACHED();
+					
 					break;
 				}
 				case SC_Create:
@@ -130,51 +132,39 @@ ExceptionHandler(ExceptionType which)
 					DEBUG('a', "\n SC_CreateFile call ...");
 					DEBUG('a', "\n Reading virtual address of filename");
 
-					virtAddr = kernel->machine->ReadRegister(4); //Doc dia chi cua file tu thanh ghi R4
+					virtAddr = kernel->machine->ReadRegister(4); //read file address from reg R4
 					DEBUG('a', "\n Reading filename.");
 					
-					//Sao chep khong gian bo nho User sang System, voi do dang toi da la (32 + 1) bytes
+					//copy from User to System, maximum (32 + 1) bytes
 					filename = User2System(virtAddr, MaxFileLength + 1);
 					if (strlen(filename) == 0)
 					{
-						printf("\n File name is not valid");
 						DEBUG('a', "\n File name is not valid");
-						kernel->machine->WriteRegister(2, -1); //Return -1 vao thanh ghi R2
-						//IncreasePC();
-						//return;
+						kernel->machine->WriteRegister(2, -1); //return -1 to reg R2
 						break;
 					}
 					
-					if (filename == NULL)  //Neu khong doc duoc
+					if (filename == NULL)  //cannot read
 					{
-						printf("\n Not enough memory in system");
 						DEBUG('a', "\n Not enough memory in system");
-						kernel->machine->WriteRegister(2, -1); //Return -1 vao thanh ghi R2
+						kernel->machine->WriteRegister(2, -1); //return -1 vao thanh ghi R2
 						delete filename;
-						//IncreasePC();
-						//return;
 						break;
 					}
 					DEBUG('a', "\n Finish reading filename.");
 					
-					if (!kernel->fileSystem->Create(filename)) //Tao file bang ham Create cua fileSystem, tra ve ket qua
+					if (!kernel->fileSystem->Create(filename)) //trigger Create of fileSystem, return -1 if fail
 					{
-						//Tao file that bai
-						printf("\n Error create file '%s'", filename);
 						kernel->machine->WriteRegister(2, -1);
 						delete filename;
-						//IncreasePC();
-						//return;
+
 						break;
 					}
 					
-					//Tao file thanh cong
+					//create success
+					//printf("\n Error create file '%s'", 1);
 					kernel->machine->WriteRegister(2, 0);
 					delete filename;
-			
-					return;
-					
-					ASSERTNOTREACHED();
 
 					break;
 				}
@@ -193,10 +183,54 @@ ExceptionHandler(ExceptionType which)
 					
 					IncreasePC();
 
-					return;
+					break;
+				}
+				case SC_Open:
+				{
 					
-					ASSERTNOTREACHED();
+					int virtAddr = kernel->machine->ReadRegister(4); //read file address from reg R4
+					int type = kernel->machine->ReadRegister(5); //read type from reg R5
+					char* filename;
+					filename = User2System(virtAddr, MaxFileLength); // 
+					
+					int freeSlot = kernel->fileSystem->FindFreeSlot();
+					
 
+					if (freeSlot != -1) //if free slot
+					{
+						if (type == 0 || type == 1) //if type == 0 or type == 1
+						{
+							if ((kernel->fileSystem->openf[freeSlot] = kernel->fileSystem->Open(filename, type)) != NULL) //open success
+							{	
+								kernel->machine->WriteRegister(2, freeSlot); //return OpenFileID
+							}
+						}
+						delete[] filename;
+
+						break;
+					}
+					
+					kernel->machine->WriteRegister(2, -1); //cannot open file
+					
+					
+					delete[] filename;
+
+					break;
+				}
+				case SC_Close:
+				{
+					int fid = kernel->machine->ReadRegister(4); // Lay id cua file tu thanh ghi so 4
+					if (fid >= 0 && fid <= 19) //Chi xu li khi fid nam trong [0, 14]
+					{
+						if (kernel->fileSystem->openf[fid]) //neu mo file thanh cong
+						{
+							delete kernel->fileSystem->openf[fid]; //Xoa vung nho luu tru file
+							kernel->fileSystem->openf[fid] = NULL; //Gan vung nho NULL
+							kernel->machine->WriteRegister(2, 0);
+							break;
+						}
+					}
+					kernel->machine->WriteRegister(2, -1);
 					break;
 				}
 				
@@ -217,5 +251,4 @@ ExceptionHandler(ExceptionType which)
 			break;
 		}
     }
-    ASSERTNOTREACHED();
 }

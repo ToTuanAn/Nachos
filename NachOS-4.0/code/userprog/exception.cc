@@ -281,6 +281,48 @@ void SC_Write_func(){
 
 }
 
+void SC_Seek_func(){
+	int pos = kernel->machine->ReadRegister(4); // cursor pos from reg 4
+	int id = kernel->machine->ReadRegister(5); // id from reg 5
+
+	if (id < 0 || id > 19)
+	{
+		kernel->machine->WriteRegister(2, -1);
+		IncreasePC();
+		return;
+	}
+
+	// file not exist
+	if (kernel->fileSystem->openf[id] == NULL)
+	{
+		kernel->machine->WriteRegister(2, -1);
+		IncreasePC();
+		return;
+	}
+
+	if (id == 0 || id == 1)
+	{
+		kernel->machine->WriteRegister(2, -1);
+		IncreasePC();
+		return;
+	}
+
+	pos = (pos == -1) ? kernel->fileSystem->openf[id]->Length() : pos;
+
+	if (pos > kernel->fileSystem->openf[id]->Length() || pos < 0)
+	{
+		kernel->machine->WriteRegister(2, -1);
+	}
+	else
+	{
+		kernel->fileSystem->openf[id]->Seek(pos);
+		kernel->machine->WriteRegister(2, pos);
+	}
+	IncreasePC();
+
+	return;
+}
+
 //----------------------------------------------------------------------
 // ExceptionHandler
 // 	Entry point into the Nachos kernel.  Called when a user program
@@ -355,21 +397,25 @@ ExceptionHandler(ExceptionType which)
 					SC_Write_func();
 					return;
 				}
+				case SC_Seek:
+				{
+					SC_Seek_func();
+					return;
+				}
 				default:
 				{
 					cerr << "Unexpected system call " << type << "\n";
 					break;
 				}
-			
+				/* Modify return point */
+				IncreasePC();
+				break;
 			}
-			/* Modify return point */
-			IncreasePC();
-			break;
 		}
 		default:
 		{
 			cerr << "Unexpected user mode exception" << (int)which << "\n";
 			break;
 		}
-    }
+	}
 }

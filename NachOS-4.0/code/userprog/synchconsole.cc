@@ -9,6 +9,16 @@
 #include "copyright.h"
 #include "synchconsole.h"
 
+
+static Semaphore *synchReadAvail;
+static Semaphore *synchWriteAvail;
+static Semaphore *RLineBlock;
+static Semaphore *WLineBlock;
+
+
+static void SynchReadFunct(int arg) { synchReadAvail->V(); }
+static void SynchWriteFunct(int arg) { synchWriteAvail->V(); }
+
 //----------------------------------------------------------------------
 // SynchConsoleInput::SynchConsoleInput
 //      Initialize synchronized access to the keyboard
@@ -51,6 +61,23 @@ SynchConsoleInput::GetChar()
     ch = consoleInput->GetChar();
     lock->Release();
     return ch;
+}
+
+//----------------------------------------------------------------------
+// SynchConsoleInput::GetChar
+//      Read a character typed at the keyboard, waiting if necessary.
+//----------------------------------------------------------------------
+
+
+int SynchConsoleInput::GetString(char *buffer, int size) {
+    for (int i = 0; i < size; ++i) {
+        buffer[i] = this->GetChar();
+        if (buffer[i] == EOF) {
+            buffer[i] = 0;
+            return -2;
+        }
+    }
+    return size;
 }
 
 //----------------------------------------------------------------------
@@ -106,11 +133,22 @@ SynchConsoleOutput::PutChar(char ch)
     lock->Release();
 }
 
+int
+SynchConsoleOutput::PutString(char* buffer, int size)
+{
+    for (int i = 0; i < size; ++i)
+    {
+        this->PutChar(buffer[i]);
+    } 
+    return size;
+}
+
 //----------------------------------------------------------------------
 // SynchConsoleOutput::CallBack
 //      Interrupt handler called when it's safe to send the next 
 //	character can be sent to the display.
 //----------------------------------------------------------------------
+
 
 void
 SynchConsoleOutput::CallBack()

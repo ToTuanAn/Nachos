@@ -77,6 +77,7 @@ class Lock {
 
     bool IsHeldByCurrentThread() { 
     		return lockHolder == kernel->currentThread; }
+    // bool IsHeldByCurrentThread() {return TRUE;}
     				// return true if the current thread 
 				// holds this lock.
     

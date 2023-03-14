@@ -79,6 +79,208 @@ int System2User(int virtAddr,int len,char* buffer)
 
 	return i;
 }
+   
+void SC_CreateFile_func() {
+    int virtAddr;
+	char* filename;
+
+	virtAddr = kernel->machine->ReadRegister(4); //read file address from reg R4
+	
+	//copy from User to System, maximum (32 + 1) bytes
+	filename = User2System(virtAddr, MaxFileLength);
+
+	if(SysCreate(filename))
+	{
+		kernel->machine->WriteRegister(2, 0);
+	}else
+	{
+		kernel->machine->WriteRegister(2, -1);
+	}
+	
+	delete filename;
+    IncreasePC();
+
+	return;
+}
+
+void SC_Add_func() {
+	/* Process SysAdd Systemcall*/
+	int result;
+	result = SysAdd(/* int op1 */(int)kernel->machine->ReadRegister(4),
+			/* int op2 */(int)kernel->machine->ReadRegister(5));
+
+	/* Prepare Result */
+	kernel->machine->WriteRegister(2, (int)result);
+	
+	IncreasePC();
+	return;
+}
+
+void SC_Open_func() {
+	int virtAddr = kernel->machine->ReadRegister(4); //read file address from reg R4
+	int type = kernel->machine->ReadRegister(5); //read type from reg R5
+	char* filename;
+	filename = User2System(virtAddr, MaxFileLength); // 
+	
+	int freeSlot = SysOpen(filename, type);
+
+	if(freeSlot != -1){
+		kernel->machine->WriteRegister(2, freeSlot);
+		cerr << freeSlot << "\n";
+	}else{
+		kernel->machine->WriteRegister(2, -1); //cannot open file
+	}
+
+	delete[] filename;
+	IncreasePC();
+	return;
+}
+
+void SC_Close_func() {
+	int fid = kernel->machine->ReadRegister(4); // get file id from reg 4
+
+	if (fid >= 0 && fid <= 19) //in range [0, 19]
+	{
+		if (kernel->fileSystem->openf[fid]) //open file success
+		{
+			delete kernel->fileSystem->openf[fid]; //delete memory open file
+			kernel->fileSystem->openf[fid] = NULL; //attach NULL
+			kernel->machine->WriteRegister(2, 0);
+		}
+	}
+	kernel->machine->WriteRegister(2, -1);
+	IncreasePC();
+	return;
+}
+
+void SC_Read_func() {
+	int virtAddr = kernel->machine->ReadRegister(4); // Lay dia chi cua tham so buffer tu thanh ghi so 4
+	int charcount = kernel->machine->ReadRegister(5); // Lay charcount tu thanh ghi so 5
+	int id = kernel->machine->ReadRegister(6); // Lay id cua file tu thanh ghi so 6 
+	
+	int OldPos;
+	int NewPos;
+	char *buf;
+
+	if (id < 0 || id > 19) //out of range 0-20 file descriptors
+	{
+		kernel->machine->WriteRegister(2, -1);
+		IncreasePC();
+		return;
+	}
+
+	if (kernel->fileSystem->openf[id] == NULL) //file not exist
+	{
+		kernel->machine->WriteRegister(2, -1);
+		IncreasePC();
+		return;
+	}
+
+	if (id == 1) //file stdout cannot read
+	{
+		kernel->machine->WriteRegister(2, -1);
+		IncreasePC();
+		return;
+	}
+
+	OldPos = kernel->fileSystem->openf[id]->GetCurrentPos(); //get OldPos 
+
+	buf = User2System(virtAddr, charcount); 
+
+	if (id == 0)
+	{
+		int size = SysRead(buf, charcount);
+		System2User(virtAddr, size, buf);
+		kernel->machine->WriteRegister(2, size); // return number of byte read
+		delete buf;
+		IncreasePC();
+		return;
+	}
+
+	if ((kernel->fileSystem->openf[id]->Read(buf, charcount)) > 0)
+	{
+		NewPos = kernel->fileSystem->openf[id]->GetCurrentPos();
+ 
+		System2User(virtAddr, NewPos - OldPos, buf); 
+		kernel->machine->WriteRegister(2, NewPos - OldPos);
+	}
+	else
+	{
+		kernel->machine->WriteRegister(2, -2);
+	}
+	delete buf;
+	IncreasePC();
+
+	return;
+}
+
+void SC_Write_func(){
+	int virtAddr = kernel->machine->ReadRegister(4); // Lay dia chi cua tham so buffer tu thanh ghi so 4
+	int charcount = kernel->machine->ReadRegister(5); // Lay charcount tu thanh ghi so 5
+	int id = kernel->machine->ReadRegister(6); // Lay id cua file tu thanh ghi so 6
+
+	int OldPos;
+	int NewPos;
+	char *buf;
+
+	// out of range
+	if (id < 0 || id > 19)
+	{
+		kernel->machine->WriteRegister(2, -1);
+		IncreasePC();
+		return;
+	}
+
+	// file not exist
+	if (kernel->fileSystem->openf[id] == NULL)
+	{
+		kernel->machine->WriteRegister(2, -1);
+		IncreasePC();
+		return;
+	}
+
+	// cannot write stdin file
+	if (id == 0)
+	{
+		kernel->machine->WriteRegister(2, -1);
+		IncreasePC();
+		return;
+	}
+
+	// cannot write read only file
+	if (kernel->fileSystem->openf[id]->type == 1)
+	{
+		kernel->machine->WriteRegister(2, -1);
+		IncreasePC();
+		return;
+	}
+
+	OldPos = kernel->fileSystem->openf[id]->GetCurrentPos(); 
+	buf = User2System(virtAddr, charcount);  
+	
+	if (kernel->fileSystem->openf[id]->type == 0)
+	{
+		if ((kernel->fileSystem->openf[id]->Write(buf, charcount)) > 0)
+		{
+			NewPos = kernel->fileSystem->openf[id]->GetCurrentPos();
+			kernel->machine->WriteRegister(2, NewPos - OldPos);
+			delete buf;
+			IncreasePC();
+			return;
+		}
+	}
+
+	if (id == 1) // Xet truong hop con lai ghi file stdout (type quy uoc la 3)
+	{
+		int size = SysWrite(buf, charcount);
+		kernel->machine->WriteRegister(2, size); // Tra ve so byte thuc su write duoc
+		delete buf;
+		IncreasePC();
+		return;
+	}
+
+}
+
 //----------------------------------------------------------------------
 // ExceptionHandler
 // 	Entry point into the Nachos kernel.  Called when a user program
@@ -119,121 +321,40 @@ ExceptionHandler(ExceptionType which)
 			{	
 				case SC_Halt:
 				{
-					
-					DEBUG(dbgSys, "Shutdown, initiated by user program.\n");
 					SysHalt();
-					
-					break;
+					return;
 				}
 				case SC_Create:
 				{
-					int virtAddr;
-					char* filename;
-					DEBUG('a', "\n SC_CreateFile call ...");
-					DEBUG('a', "\n Reading virtual address of filename");
-
-					virtAddr = kernel->machine->ReadRegister(4); //read file address from reg R4
-					DEBUG('a', "\n Reading filename.");
-					
-					//copy from User to System, maximum (32 + 1) bytes
-					filename = User2System(virtAddr, MaxFileLength + 1);
-					if (strlen(filename) == 0)
-					{
-						DEBUG('a', "\n File name is not valid");
-						kernel->machine->WriteRegister(2, -1); //return -1 to reg R2
-						break;
-					}
-					
-					if (filename == NULL)  //cannot read
-					{
-						DEBUG('a', "\n Not enough memory in system");
-						kernel->machine->WriteRegister(2, -1); //return -1 vao thanh ghi R2
-						delete filename;
-						break;
-					}
-					DEBUG('a', "\n Finish reading filename.");
-					
-					if (!kernel->fileSystem->Create(filename)) //trigger Create of fileSystem, return -1 if fail
-					{
-						kernel->machine->WriteRegister(2, -1);
-						delete filename;
-
-						break;
-					}
-					
-					//create success
-					//printf("\n Error create file '%s'", 1);
-					kernel->machine->WriteRegister(2, 0);
-					delete filename;
-
-					break;
+					SC_CreateFile_func();
+					return;
 				}
 				case SC_Add:
 				{
-					DEBUG(dbgSys, "Add " << kernel->machine->ReadRegister(4) << " + " << kernel->machine->ReadRegister(5) << "\n");
-				
-					/* Process SysAdd Systemcall*/
-					int result;
-					result = SysAdd(/* int op1 */(int)kernel->machine->ReadRegister(4),
-							/* int op2 */(int)kernel->machine->ReadRegister(5));
-
-					DEBUG(dbgSys, "Add returning with " << result << "\n");
-					/* Prepare Result */
-					kernel->machine->WriteRegister(2, (int)result);
 					
-					IncreasePC();
-
-					break;
+					SC_Add_func();
+					return;
 				}
 				case SC_Open:
 				{
-					
-					int virtAddr = kernel->machine->ReadRegister(4); //read file address from reg R4
-					int type = kernel->machine->ReadRegister(5); //read type from reg R5
-					char* filename;
-					filename = User2System(virtAddr, MaxFileLength); // 
-					
-					int freeSlot = kernel->fileSystem->FindFreeSlot();
-					
-
-					if (freeSlot != -1) //if free slot
-					{
-						if (type == 0 || type == 1) //if type == 0 or type == 1
-						{
-							if ((kernel->fileSystem->openf[freeSlot] = kernel->fileSystem->Open(filename, type)) != NULL) //open success
-							{	
-								kernel->machine->WriteRegister(2, freeSlot); //return OpenFileID
-							}
-						}
-						delete[] filename;
-
-						break;
-					}
-					
-					kernel->machine->WriteRegister(2, -1); //cannot open file
-					
-					
-					delete[] filename;
-
+					SC_Open_func();
 					break;
 				}
 				case SC_Close:
 				{
-					int fid = kernel->machine->ReadRegister(4); // Lay id cua file tu thanh ghi so 4
-					if (fid >= 0 && fid <= 19) //Chi xu li khi fid nam trong [0, 14]
-					{
-						if (kernel->fileSystem->openf[fid]) //neu mo file thanh cong
-						{
-							delete kernel->fileSystem->openf[fid]; //Xoa vung nho luu tru file
-							kernel->fileSystem->openf[fid] = NULL; //Gan vung nho NULL
-							kernel->machine->WriteRegister(2, 0);
-							break;
-						}
-					}
-					kernel->machine->WriteRegister(2, -1);
-					break;
+					SC_Close_func();
+					return;
 				}
-				
+				case SC_Read:
+				{
+					SC_Read_func();
+					return;
+				}
+				case SC_Write:
+				{
+					SC_Write_func();
+					return;
+				}
 				default:
 				{
 					cerr << "Unexpected system call " << type << "\n";

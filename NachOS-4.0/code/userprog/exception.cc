@@ -323,6 +323,28 @@ void SC_Seek_func(){
 	return;
 }
 
+void SC_Remove_func(){
+	int virtAddr;
+	char* filename;
+
+	virtAddr = kernel->machine->ReadRegister(4); //read file address from reg R4
+	//copy from User to System, maximum (32 + 1) bytes
+	filename = User2System(virtAddr, MaxFileLength);
+
+	if(SysRemove(filename))
+	{
+		kernel->machine->WriteRegister(2, 0);
+	}else
+	{
+		kernel->machine->WriteRegister(2, -1);
+	}
+	
+	delete filename;
+    IncreasePC();
+
+	return;
+}
+
 //----------------------------------------------------------------------
 // ExceptionHandler
 // 	Entry point into the Nachos kernel.  Called when a user program
@@ -351,9 +373,9 @@ ExceptionHandler(ExceptionType which)
 {
     int type = kernel->machine->ReadRegister(2);
 
-    DEBUG(dbgSys, "Received Exception " << which << " type: " << type << "\n");
+    //DEBUG(dbgSys, "Received Exception " << which << " type: " << type << "\n");
 
-	cerr << "Received Exception " << which << " type: " << type << "\n";
+	//cerr << "Received Exception " << which << " type: " << type << "\n";
 
     switch (which) {
 
@@ -402,13 +424,16 @@ ExceptionHandler(ExceptionType which)
 					SC_Seek_func();
 					return;
 				}
+				case SC_Remove:
+				{
+					SC_Remove_func();
+					return;
+				}
 				default:
 				{
 					cerr << "Unexpected system call " << type << "\n";
 					break;
 				}
-				/* Modify return point */
-				IncreasePC();
 				break;
 			}
 		}

@@ -45,6 +45,26 @@ int SysCreate(char* filename){
   return TRUE;
 }
 
+int SysRemove(char* filename){
+  if (strlen(filename) == 0)
+	{
+		return FALSE;
+	}
+	
+	if (filename == NULL)  //cannot read
+	{
+		return FALSE;
+	}
+
+  if (!kernel->fileSystem->Remove(filename)) //trigger Create of fileSystem, return -1 if fail
+	{
+    return FALSE;
+	}
+
+  return TRUE;
+
+}
+
 int SysOpen(char* filename, int type){
   int freeSlot = kernel->fileSystem->FindFreeSlot();
 

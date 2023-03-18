@@ -40,9 +40,21 @@
 #ifdef FILESYS_STUB 		// Temporarily implement file system calls as 
 				// calls to UNIX, until the real file system
 				// implementation is available
+
+struct OpenFileSocket {
+	int socketId;
+	OpenFileSocket(int socketId){
+		this->socketId = socketId;
+	}
+	~OpenFileSocket(){
+		CloseSocket(this->socketId);
+	}
+};
+
 class FileSystem {
   public:
   	OpenFile** openf; //check file is opened
+	OpenFileSocket * socketDT[20];
 	int index;
 
 	FileSystem(bool format) {
@@ -92,6 +104,47 @@ class FileSystem {
 
     bool Remove(char *name) { return Unlink(name) == 0; }
 
+	int findFreeSlotSocket(){
+		for(int i = 0 ; i < 20 ; i++){
+			if(socketDT[i] == NULL){
+				return i;
+			}
+		}
+
+		return -1;
+	}
+
+	int initSocketTCP(){
+		int index = findFreeSlotSocket();
+		if(index == -1){
+			return -1;
+		}
+		int socketId = OpenSocketTCP();
+		if(socketId <= -1){
+			return -1;
+		}
+		socketDT[index] = new OpenFileSocket(socketId);
+		return index;
+	}
+
+	int connectSocketTCP(int socketId, char* ip, int port){
+		DEBUG(dbgNet,"bla bla");
+		if(socketId < 0 || socketId >= 20 || socketDT[socketId] == NULL){
+			return -1;
+		}
+		DEBUG(dbgNet,"Go here");
+		return ConnectSocket(socketDT[socketId]->socketId,ip,port);
+		
+	}
+	int closeSocketTCP(int socketId){
+		if(socketId < 0 || socketId >= 20 || socketDT[socketId] == NULL){
+			return -1;
+		}
+		delete socketDT[socketId];
+		socketDT[socketId] = NULL;
+		return 0;
+	}
+
 };
 
 #else // FILESYS
@@ -121,6 +174,10 @@ class FileSystem {
     void Print();			// List all the files and their contents
 
 	int FindFreeSlot();
+	int closeSocketTCP(int socketId);
+	int connectSocketTCP(int socketId, char* ip, int port);
+	int initSocketTCP();
+	int findFreeSlotSocket();
 
 	//destructor file system
 	~FileSystem()

@@ -345,6 +345,48 @@ void SC_Remove_func(){
 	return;
 }
 
+void SC_SocketTCP_func(){
+
+	int sockfd = kernel->fileSystem->initSocketTCP();
+	if(sockfd != -1){
+		kernel->machine->WriteRegister(2, sockfd);
+		cerr << sockfd << "\n";
+	}else{
+		cerr<< "Cannot open socket" << "\n";
+		kernel->machine->WriteRegister(2, -1); //cannot open file
+	}
+
+	IncreasePC();
+	return;
+}
+
+void SC_Connect_func(){
+
+	IncreasePC();
+	return;
+}
+
+void SC_Send_func(){
+
+
+	IncreasePC();
+	return;
+}
+
+void SC_Receive_func(){
+
+	IncreasePC();
+	return;
+}
+
+void SC_CloseSocket1_func(){
+	IncreasePC();
+	return;
+}
+
+	
+
+
 //----------------------------------------------------------------------
 // ExceptionHandler
 // 	Entry point into the Nachos kernel.  Called when a user program
@@ -428,6 +470,27 @@ ExceptionHandler(ExceptionType which)
 				{
 					SC_Remove_func();
 					return;
+				}
+				case SC_SocketTCP : {
+					break;
+				}
+				case SC_Connect :{
+					SC_Connect_func();
+					
+					break;
+				}
+				case SC_Send :{
+					SC_Send_func();
+						
+					break;
+				}
+				case SC_Receive:{
+					SC_Receive_func();
+					break;
+				}
+				case SC_CloseSocket1:{
+					SC_CloseSocket1_func();
+					break;
 				}
 				default:
 				{

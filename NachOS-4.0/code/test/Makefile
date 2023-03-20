@@ -169,7 +169,7 @@ openfile: openfile.o start.o
 	$(COFF2NOFF) openfile.coff openfile
 
 client.o: client.c
-	$(CC) $(CFLAGS) -c openfile.c
+	$(CC) $(CFLAGS) -c client.c
 client: client.o client.o
 	$(LD) $(LDFLAGS) start.o client.o -o client.coff
 	$(COFF2NOFF) client.coff client

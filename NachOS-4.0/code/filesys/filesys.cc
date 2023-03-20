@@ -50,6 +50,7 @@
 #include "pbitmap.h"
 #include "directory.h"
 #include "filehdr.h"
+#include "sysdep.h"
 #include "filesys.h"
 
 // Sectors containing the file headers for the bitmap of free sectors,
@@ -142,10 +143,12 @@ FileSystem::FileSystem(bool format)
     }
 
     openf = new OpenFile*[15];
+    socketDT = new OpenFileSocket*[20];
 	index = 0;
 	for (int i = 0; i < 15; ++i)
 	{
 		openf[i] = NULL;
+        socketDT[i] = NULL;
 	}
 	openf[index++] = this->Open("stdin", 2);
 	openf[index++] = this->Open("stdout", 3);
@@ -383,4 +386,67 @@ int FileSystem::FindFreeSlot()
 	return -1;
 }
 
+int FileSystem::findFreeSlotSocket(){
+		for(int i = 3 ; i < 20 ; i++){
+			if(socketDT[i] == NULL){
+				return i;
+			}
+		}
+
+		return -1;
+	}
+
+int FileSystem::initSocketTCP(){
+		int index = findFreeSlotSocket();
+		if(index == -1){
+			return -1;
+		}
+		int socketId = OpenSocketTCP();
+		if(socketId <= -1){
+			return -1;
+		}
+		socketDT[index] = new OpenFileSocket(socketId);
+		return index;
+	} // return index of the socket
+
+int FileSystem::connectSocketTCP(int socketId, char* ip, int port){
+		DEBUG(dbgNet,"bla bla");
+		if(socketId < 0 || socketId >= 20 || socketDT[socketId] == NULL){
+			return -1;
+		}
+		DEBUG(dbgNet,"Go ConnectSocket function");
+		return ConnectSocket(socketDT[socketId]->socketId,ip,port);
+		
+	}
+	// int FileSystem::sendTCP(int socketid, char *buffer, int len){
+	// 	if (socketid < 3 || socketid >= 3 + MAX_SOCKETS || socket_table[socketid-3] == 0) {
+    //     return -1; // invalid socketid
+    // }
+	// }
+int FileSystem::closeSocketTCP(int socketId){
+		if(socketId < 0 || socketId >= 20 || socketDT[socketId] == NULL){
+			return -1;
+		}
+		delete socketDT[socketId];
+		socketDT[socketId] = NULL;
+		return 0;
+	}
+int FileSystem::sendTCP(int socketid, char *buffer, int len){
+		if (socketid < 3 || socketid >= 20 || socketDT[socketid] == NULL) {
+        	return -1; // invalid socketid
+		int sockfd = socketDT[socketid]->socketId;
+		return SendToSocketTCP(sockfd,buffer,len);
+    }
+	}
+
+int FileSystem::recvTCP(int socketid,char* buffer, int len){
+	if (socketid < 3 || socketid >= 20 || socketDT[socketid] == NULL) {
+        	return -1; // invalid socketid
+		int sockfd = socketDT[socketid]->socketId;
+		return RecvFromSocketTCP(sockfd,buffer,len);
+    }
+}
+
 #endif // FILESYS_STUB
+
+

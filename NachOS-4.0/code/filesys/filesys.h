@@ -54,15 +54,17 @@ struct OpenFileSocket {
 class FileSystem {
   public:
   	OpenFile** openf; //check file is opened
-	OpenFileSocket * socketDT[20];
+	OpenFileSocket** socketDT;
 	int index;
 
 	FileSystem(bool format) {
 		openf = new OpenFile*[20];
+		socketDT = new OpenFileSocket*[20];
 		index = 0;
 		for (int i = 0; i < 20; ++i)
 		{
 			openf[i] = NULL;
+			socketDT[i] = NULL;
 		}   
 		this->Create("stdin");
 		this->Create("stdout");
@@ -105,7 +107,7 @@ class FileSystem {
     bool Remove(char *name) { return Unlink(name) == 0; }
 
 	int findFreeSlotSocket(){
-		for(int i = 0 ; i < 20 ; i++){
+		for(int i = 3 ; i < 20 ; i++){
 			if(socketDT[i] == NULL){
 				return i;
 			}
@@ -125,17 +127,30 @@ class FileSystem {
 		}
 		socketDT[index] = new OpenFileSocket(socketId);
 		return index;
-	}
+	} // return index of the socket
 
 	int connectSocketTCP(int socketId, char* ip, int port){
-		DEBUG(dbgNet,"bla bla");
 		if(socketId < 0 || socketId >= 20 || socketDT[socketId] == NULL){
 			return -1;
 		}
-		DEBUG(dbgNet,"Go here");
 		return ConnectSocket(socketDT[socketId]->socketId,ip,port);
 		
 	}
+	int sendTCP(int socketid, char *buffer, int len){
+		if (socketid < 3 || socketid >= 20 || socketDT[socketid] == NULL) {
+        	return -1; // invalid socketid
+		int sockfd = socketDT[socketid]->socketId;
+		return SendToSocketTCP(sockfd,buffer,len);
+    }
+	}
+	int recvTCP(int socketid,char* buffer, int len){
+		if (socketid < 3 || socketid >= 20 || socketDT[socketid] == NULL) 
+        	return -1; // invalid socketid
+		int sockfd = socketDT[socketid]->socketId;
+		return RecvFromSocketTCP(sockfd,buffer,len);
+
+	}
+
 	int closeSocketTCP(int socketId){
 		if(socketId < 0 || socketId >= 20 || socketDT[socketId] == NULL){
 			return -1;
@@ -148,9 +163,20 @@ class FileSystem {
 };
 
 #else // FILESYS
+struct OpenFileSocket {
+	int socketId;
+	OpenFileSocket(int socketId){
+		this->socketId = socketId;
+	}
+	~OpenFileSocket(){
+		CloseSocket(this->socketId);
+	}
+};
 class FileSystem {
   public:
   	OpenFile** openf; //check if file is opened
+	OpenFileSocket** socketDT;
+	
 	int index;
 
     FileSystem(bool format);		// Initialize the file system.
@@ -177,7 +203,9 @@ class FileSystem {
 	int closeSocketTCP(int socketId);
 	int connectSocketTCP(int socketId, char* ip, int port);
 	int initSocketTCP();
+	int recvTCP(int socketid,char* buffer, int len);
 	int findFreeSlotSocket();
+	int sendTCP(int socketid, char *buffer, int len);
 
 	//destructor file system
 	~FileSystem()

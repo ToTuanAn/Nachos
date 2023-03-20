@@ -32,6 +32,9 @@
 #include <sys/file.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+
 #include <cerrno>
 
 #ifdef SOLARIS
@@ -112,6 +115,7 @@ int sendto (int, const void*, int, int, void*, int);
 // 	Arrange that "func" will be called when the user aborts (e.g., by
 //	hitting ctl-C.
 //----------------------------------------------------------------------
+
 
 void 
 CallOnUserAbort(void (*func)(int))
@@ -450,8 +454,76 @@ OpenSocketTCP()
 }
 
 int
-ConnectSocket(int socketID, char* ip, int port){
+ConnectSocket(int socketFD, char* ip, int port){
+    struct sockaddr_in serv_addr;
+    memset(&serv_addr, 0, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(port);
+    if (inet_pton(AF_INET, ip, &serv_addr.sin_addr) <= 0) {
+        return -1; // error in converting IP address
+    }
+    if (connect(socketFD, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+        return -1; // error in connecting to server
+    }
+   
     return 0;
+}
+
+int
+SendToSocketTCP(int sockFD, char *buffer, int packetSize)
+{
+    struct sockaddr_in iName;
+    int retVal;
+    int retryCount;
+
+    for(retryCount=0;retryCount < 10;retryCount++) {
+      retVal = sendto(sockFD, buffer, packetSize, 0, 
+			(struct sockaddr *) &iName, sizeof(iName));
+      
+      if (retVal == packetSize) return retVal;
+      // if we did not succeed, we should see a negative
+      // return value indicating complete failure.  If we
+      // don't, something fishy is going on...
+      ASSERT(retVal < 0);
+      // wait a second before trying again
+      Delay(1);
+    }
+    // At this point, we have failed many times
+    // The most common reason for this is that the target machine
+    // has halted and its socket no longer exists.
+    // We simply do nothing (drop the packet).
+    // This may mask other kinds of failures, but it is the
+    // right thing to do in the common case.
+    return -1;
+}
+
+int
+RecvFromSocketTCP(int sockFD, char *buffer, int packetSize)
+{
+    int retVal;
+    struct sockaddr_in iName;
+#ifdef LINUX
+    socklen_t size = sizeof(iName);
+#else
+    int size = sizeof(iName);
+#endif
+   
+    retVal = recvfrom(sockFD, buffer, packetSize, 0,
+				   (struct sockaddr *) &iName, &size);
+
+    if (retVal != packetSize) {
+        perror("in recvfrom");
+#if defined CYGWIN
+	cerr << "called with " << packetSize << ", got back " << retVal 
+						<< ", and " << "\n";
+#else 	
+        cerr << "called with " << packetSize << ", got back " << retVal 
+						<< ", and " << errno << "\n";
+#endif 
+    return -1;
+    }
+    ASSERT(retVal == packetSize);
+    return retVal;
 }
 
 //----------------------------------------------------------------------
@@ -476,6 +548,7 @@ InitSocketName(struct sockaddr_un *uname, char *name)
     uname->sun_family = AF_UNIX;
     strcpy(uname->sun_path, name);
 }
+
 
 //----------------------------------------------------------------------
 // AssignNameToSocket
@@ -585,3 +658,6 @@ SendToSocket(int sockID, char *buffer, int packetSize, char *toName)
     // This may mask other kinds of failures, but it is the
     // right thing to do in the common case.
 }
+
+
+

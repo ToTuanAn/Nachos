@@ -25,6 +25,8 @@
 #include "main.h"
 #include "syscall.h"
 #include "ksyscall.h"
+#include "filesys.h"
+#include "sys/socket.h"
 
 #define MaxFileLength 32 
 
@@ -347,7 +349,7 @@ void SC_Remove_func(){
 
 void SC_SocketTCP_func(){
 
-	int sockfd = kernel->fileSystem->initSocketTCP();
+	int sockfd = kernel->fileSystem->initSocketTCP(); // index
 	if(sockfd != -1){
 		kernel->machine->WriteRegister(2, sockfd);
 		cerr << sockfd << "\n";
@@ -361,25 +363,83 @@ void SC_SocketTCP_func(){
 }
 
 void SC_Connect_func(){
-
+	int sockID = kernel->machine->ReadRegister(4); //read socket id from reg R4
+	int virIP = kernel->machine->ReadRegister(5); //read type from reg R5
+	int port = kernel->machine->ReadRegister(6);
+	char* ip;
+	int status;
+	ip = User2System(virIP, MaxFileLength); //
+	status = kernel->fileSystem->connectSocketTCP(sockID,ip,port);
+	if(status == -1){
+		kernel->machine->WriteRegister(2,-1);
+	} else {
+		kernel->machine->WriteRegister(2,status);
+	}
+	
 	IncreasePC();
 	return;
 }
 
 void SC_Send_func(){
+	//load parameter
+	int bytes_sent;
+	int sockID = kernel->machine->ReadRegister(4); 
+	int virAdd = kernel->machine->ReadRegister(5); 
+	int len = kernel->machine->ReadRegister(6);
+	char* buffer;
+	buffer = User2System(virAdd, MaxFileLength); 
 
+	// if (sockID < 3 || sockID >= 20 || kernel->fileSystem->socketDT[sockID] == NULL) {
+    //    	kernel->machine->WriteRegister(2,-1); // invalid socketid
+    // }
+
+	// int sockfd = kernel->fileSystem->socketDT[sockID]->socketId;
+	// int bytes_sent = sendTCP(sockfd, buffer, len, 0);
+	// if (bytes_sent < 0) {
+    //     return -1; // error in sending data
+    // } else if (bytes_sent == 0) {
+    //     return 0; // connection closed
+    // }
+    // return bytes_sent; // success
+	bytes_sent = kernel->fileSystem->sendTCP(sockID,buffer,len);
+	if (bytes_sent < 0) {
+       kernel->machine->WriteRegister(2,-1); // error in sending data
+    } else if (bytes_sent == 0) {
+        kernel->machine->WriteRegister(2,0);; // connection closed
+    }
+    kernel->machine->WriteRegister(2,bytes_sent);// success
 
 	IncreasePC();
 	return;
 }
 
 void SC_Receive_func(){
-
+	int bytes_recv;
+	int sockID = kernel->machine->ReadRegister(4); 
+	int virAdd = kernel->machine->ReadRegister(5); 
+	int len = kernel->machine->ReadRegister(6);
+	char* buffer;
+	buffer = User2System(virAdd, MaxFileLength); 
+	//
+	bytes_recv = kernel->fileSystem->recvTCP(sockID,buffer,len);
+	if (bytes_recv < 0) {
+         kernel->machine->WriteRegister(2,-1); // error in receiving data
+    } else if (bytes_recv == 0) {
+         kernel->machine->WriteRegister(2,0); // connection closed
+    }
+     kernel->machine->WriteRegister(2,bytes_recv); // success
 	IncreasePC();
 	return;
 }
 
 void SC_CloseSocket1_func(){
+	int socketID = kernel->machine->ReadRegister(4);
+	int status = kernel->fileSystem->closeSocketTCP(socketID);
+	if(status < -1){
+		kernel->machine->WriteRegister(2,-1);\
+	} else {
+		kernel->machine->WriteRegister(2,0);
+	}
 	IncreasePC();
 	return;
 }

@@ -9,7 +9,7 @@
 #define PORT 8080
 #define MAX_MSG_LENGTH 1024
 
-const char message[] = "Hello sockets world\n";
+const char message[] = "Hello sockets hehhehe\n";
 
 int main() {
 

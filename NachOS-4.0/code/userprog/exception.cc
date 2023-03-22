@@ -355,7 +355,8 @@ void SC_SocketTCP_func(){
 		cerr << sockfd << "\n";
 	}else{
 		cerr<< "Cannot open socket" << "\n";
-		kernel->machine->WriteRegister(2, -1); //cannot open file
+		kernel->machine->WriteRegister(2, -1); //cannot open fi
+
 	}
 
 	IncreasePC();
@@ -388,19 +389,6 @@ void SC_Send_func(){
 	int len = kernel->machine->ReadRegister(6);
 	char* buffer;
 	buffer = User2System(virAdd, MaxFileLength); 
-
-	// if (sockID < 3 || sockID >= 20 || kernel->fileSystem->socketDT[sockID] == NULL) {
-    //    	kernel->machine->WriteRegister(2,-1); // invalid socketid
-    // }
-
-	// int sockfd = kernel->fileSystem->socketDT[sockID]->socketId;
-	// int bytes_sent = sendTCP(sockfd, buffer, len, 0);
-	// if (bytes_sent < 0) {
-    //     return -1; // error in sending data
-    // } else if (bytes_sent == 0) {
-    //     return 0; // connection closed
-    // }
-    // return bytes_sent; // success
 	bytes_sent = kernel->fileSystem->sendTCP(sockID,buffer,len);
 	if (bytes_sent < 0) {
        kernel->machine->WriteRegister(2,-1); // error in sending data

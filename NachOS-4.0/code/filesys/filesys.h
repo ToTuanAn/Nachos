@@ -107,7 +107,7 @@ class FileSystem {
     bool Remove(char *name) { return Unlink(name) == 0; }
 
 	int findFreeSlotSocket(){
-		for(int i = 3 ; i < 20 ; i++){
+		for(int i = 2 ; i < 20 ; i++){
 			if(socketDT[i] == NULL){
 				return i;
 			}

@@ -472,13 +472,11 @@ ConnectSocket(int socketFD, char* ip, int port){
 int
 SendToSocketTCP(int sockFD, char *buffer, int packetSize)
 {
-    struct sockaddr_in iName;
+    // struct sockaddr_in iName;
     int retVal;
     int retryCount;
-
     for(retryCount=0;retryCount < 10;retryCount++) {
-      retVal = sendto(sockFD, buffer, packetSize, 0, 
-			(struct sockaddr *) &iName, sizeof(iName));
+      retVal = send(sockFD, buffer, packetSize, 0);
       
       if (retVal == packetSize) return retVal;
       // if we did not succeed, we should see a negative
@@ -501,26 +499,13 @@ int
 RecvFromSocketTCP(int sockFD, char *buffer, int packetSize)
 {
     int retVal;
-    struct sockaddr_in iName;
-#ifdef LINUX
-    socklen_t size = sizeof(iName);
-#else
-    int size = sizeof(iName);
-#endif
-   
-    retVal = recvfrom(sockFD, buffer, packetSize, 0,
-				   (struct sockaddr *) &iName, &size);
+    retVal = recv(sockFD, buffer, packetSize, 0);
 
     if (retVal != packetSize) {
         perror("in recvfrom");
-#if defined CYGWIN
-	cerr << "called with " << packetSize << ", got back " << retVal 
-						<< ", and " << "\n";
-#else 	
         cerr << "called with " << packetSize << ", got back " << retVal 
 						<< ", and " << errno << "\n";
-#endif 
-    return -1;
+        return -1;
     }
     ASSERT(retVal == packetSize);
     return retVal;

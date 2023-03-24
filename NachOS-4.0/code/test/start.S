@@ -148,6 +148,46 @@ Seek:
 
         .globl ThreadFork
         .ent    ThreadFork
+SocketTCP:
+	addiu $2,$0,SC_SocketTCP
+	syscall
+	j	$31
+	.end SocketTCP
+
+        .globl Connect
+        .ent    Connect
+Connect:
+	addiu $2,$0,SC_Connect
+	syscall
+	j	$31
+	.end Connect
+
+        .globl Send
+        .ent    Send
+Send:
+	addiu $2,$0,SC_Send
+	syscall
+	j	$31
+	.end Send
+
+        .globl Receive
+        .ent    Receive
+Receive:
+	addiu $2,$0,SC_Receive
+	syscall
+	j	$31
+	.end Receive
+
+        .globl CloseSocket1
+        .ent    CloseSocket1
+CloseSocket1:
+	addiu $2,$0,SC_CloseSocket1
+	syscall
+	j	$31
+	.end CloseSocket1
+
+        .globl ThreadFork
+        .ent    ThreadFork
 ThreadFork:
         addiu $2,$0,SC_ThreadFork
         syscall

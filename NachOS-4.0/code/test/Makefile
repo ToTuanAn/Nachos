@@ -105,14 +105,14 @@ CC = $(GCCDIR)gcc
 AS = $(GCCDIR)as
 LD = $(GCCDIR)ld
 
-INCDIR =-I../userprog -I../lib
-CFLAGS = -G 0 -c $(INCDIR) -B../../../usr/local/nachos/lib/gcc-lib/decstation-ultrix/2.95.2/ -B../../../usr/local/nachos/decstation-ultrix/bin/
+INCDIR =-I../userprog -I../lib 
+CFLAGS = -G 0 -c $(INCDIR) -B../../../usr/local/nachos/lib/gcc-lib/decstation-ultrix/2.95.2/ -B../../../usr/local/nachos/decstation-ultrix/bin/ 
 
 ifeq ($(hosttype),unknown)
 PROGRAMS = unknownhost
 else
 # change this if you create a new test program!
-PROGRAMS = add halt shell matmult sort segments createfile openfile removefile server client fileclient
+PROGRAMS = add halt shell matmult sort segments createfile openfile removefile client server fileclient
 endif
 
 all: $(PROGRAMS)
@@ -176,7 +176,7 @@ fileclient: fileclient.o start.o
 
 client.o: client.c
 	$(CC) $(CFLAGS) -c client.c
-client: client.o client.o
+client: client.o start.o
 	$(LD) $(LDFLAGS) start.o client.o -o client.coff
 	$(COFF2NOFF) client.coff client
 

@@ -15,6 +15,7 @@ int main()
 {
     int server_fd, new_socket, valread;
     struct sockaddr_in address;
+    int i;
     int addrlen = sizeof(address);
     char buffer[MAX_MSG_LENGTH] = {0};
 
@@ -52,7 +53,8 @@ int main()
 
     // Read the message from the client and convert it to uppercase
     valread = read(new_socket, buffer, MAX_MSG_LENGTH);
-    for (int i = 0; i < valread; i++)
+  
+    for (i = 0; i < valread; i++)
     {
         buffer[i] = toupper(buffer[i]);
     }

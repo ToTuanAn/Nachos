@@ -52,7 +52,6 @@ int main(int argc, char *argv[]) {
     exit(2);
   }
 
-   
 
     // Send the file content to the server
     int bytes_sent = Send(socketID, file_content, bytes_read, 0);

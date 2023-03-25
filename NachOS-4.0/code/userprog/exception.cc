@@ -126,7 +126,7 @@ void SC_Open_func() {
 
 	if(freeSlot != -1){
 		kernel->machine->WriteRegister(2, freeSlot);
-		cerr << freeSlot << "\n";
+		//cerr << freeSlot << "\n";
 	}else{
 		kernel->machine->WriteRegister(2, -1); //cannot open file
 	}
@@ -345,6 +345,15 @@ void SC_Remove_func(){
 	return;
 }
 
+void SC_PrintChar_func(){
+
+	char c = (char)kernel->machine->ReadRegister(4); // Doc ki tu tu thanh ghi r4
+	SysPrintChar(c);
+
+	IncreasePC(); // Tang Program Counter 
+	return;
+}
+
 //----------------------------------------------------------------------
 // ExceptionHandler
 // 	Entry point into the Nachos kernel.  Called when a user program
@@ -391,13 +400,13 @@ ExceptionHandler(ExceptionType which)
 				case SC_Create:
 				{
 					SC_CreateFile_func();
-					return;
+					break;
 				}
 				case SC_Add:
 				{
 					
 					SC_Add_func();
-					return;
+					break;
 				}
 				case SC_Open:
 				{
@@ -407,31 +416,37 @@ ExceptionHandler(ExceptionType which)
 				case SC_Close:
 				{
 					SC_Close_func();
-					return;
+					break;
 				}
 				case SC_Read:
 				{
 					SC_Read_func();
-					return;
+					break;
 				}
 				case SC_Write:
 				{
 					SC_Write_func();
-					return;
+					break;
 				}
 				case SC_Seek:
 				{
 					SC_Seek_func();
-					return;
+					break;
 				}
 				case SC_Remove:
 				{
 					SC_Remove_func();
-					return;
+					break;
+				}
+				case SC_PrintChar:
+				{
+					SC_PrintChar_func();
+					break;
+
 				}
 				default:
 				{
-					cerr << "Unexpected system call " << type << "\n";
+					//cerr << "Unexpected system call " << type << "\n";
 					break;
 				}
 				break;
@@ -439,7 +454,7 @@ ExceptionHandler(ExceptionType which)
 		}
 		default:
 		{
-			cerr << "Unexpected user mode exception" << (int)which << "\n";
+			//cerr << "Unexpected user mode exception" << (int)which << "\n";
 			break;
 		}
 	}

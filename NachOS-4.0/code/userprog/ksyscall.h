@@ -91,6 +91,10 @@ int SysWrite(char* buffer, int charCount){
   return kernel->synchConsoleOut->PutString(buffer, charCount);
 }
 
+void SysPrintChar(char character) {
+    kernel->synchConsoleOut->PutChar(character);
+}
+
 
 
 

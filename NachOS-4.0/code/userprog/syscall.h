@@ -36,6 +36,7 @@
 #define SC_ThreadJoin   15
 
 #define SC_Add		42
+#define SC_PrintChar    43
 
 #ifndef IN_ASM
 
@@ -145,6 +146,7 @@ int Seek(int position, OpenFileId id);
  */
 int Close(OpenFileId id);
 
+void PrintChar(char buffer);
 
 void PrintString(char buffer[]);
 

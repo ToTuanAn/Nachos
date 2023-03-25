@@ -26,7 +26,8 @@
 #include "syscall.h"
 #include "ksyscall.h"
 #include "filesys.h"
-#include "sys/socket.h"
+#include"synchconsole.h"
+
 
 #define MaxFileLength 32 
 
@@ -352,11 +353,10 @@ void SC_SocketTCP_func(){
 	int sockfd = kernel->fileSystem->initSocketTCP(); // index
 	if(sockfd != -1){
 		kernel->machine->WriteRegister(2, sockfd);
-		cerr << sockfd << "\n";
+		cerr << "create socket: "<<sockfd << "\n";
 	}else{
 		cerr<< "Cannot open socket" << "\n";
-		kernel->machine->WriteRegister(2, -1); //cannot open fi
-
+		kernel->machine->WriteRegister(2, -1); //cannot open file
 	}
 
 	IncreasePC();
@@ -415,7 +415,8 @@ void SC_Receive_func(){
     } else if (bytes_recv == 0) {
          kernel->machine->WriteRegister(2,0); // connection closed
     }
-     kernel->machine->WriteRegister(2,bytes_recv); // success
+	System2User(virAdd,len, buffer);
+    kernel->machine->WriteRegister(2,bytes_recv); // success
 	IncreasePC();
 	return;
 }
@@ -432,7 +433,22 @@ void SC_CloseSocket1_func(){
 	return;
 }
 
-	
+void SC_PrintString_func(){
+	 int memPtr = kernel->machine->ReadRegister(4);  // read address of C-string
+    char* buffer = User2System(memPtr,MaxFileLength);
+
+    SysWrite(buffer, strlen(buffer));
+    delete[] buffer;
+    IncreasePC();
+	return;
+}
+
+void SC_Exit_func(){
+	int id = kernel->machine->ReadRegister(4);
+    kernel->machine->WriteRegister(2, SysExit(id));
+    IncreasePC();
+	return;
+}
 
 
 //----------------------------------------------------------------------
@@ -468,6 +484,27 @@ ExceptionHandler(ExceptionType which)
 	//cerr << "Received Exception " << which << " type: " << type << "\n";
 
     switch (which) {
+		  case NoException:  // return control to kernel
+            kernel->interrupt->setStatus(SystemMode);
+            DEBUG(dbgSys, "Switch to system mode\n");
+            break;
+          case PageFaultException:
+		  	break;
+          case ReadOnlyException:
+		  	break;
+          case BusErrorException:
+		  	break;
+          case AddressErrorException:
+		  	break;
+          case OverflowException:
+		  	break;
+          case IllegalInstrException:
+		  	break;
+          case NumExceptionTypes:
+            cerr << "Error " << which << " occurs\n";
+            SysHalt();
+            ASSERTNOTREACHED();
+			break;
 
     	case SyscallException:
 		{
@@ -476,18 +513,22 @@ ExceptionHandler(ExceptionType which)
 				case SC_Halt:
 				{
 					SysHalt();
-					return;
+					break;
+				}
+				case SC_Exit:{
+					SC_Exit_func();
+					break;
 				}
 				case SC_Create:
 				{
 					SC_CreateFile_func();
-					return;
+					break;
 				}
 				case SC_Add:
 				{
 					
 					SC_Add_func();
-					return;
+					break;
 				}
 				case SC_Open:
 				{
@@ -497,39 +538,38 @@ ExceptionHandler(ExceptionType which)
 				case SC_Close:
 				{
 					SC_Close_func();
-					return;
+					break;
 				}
 				case SC_Read:
 				{
 					SC_Read_func();
-					return;
+					break;
 				}
 				case SC_Write:
 				{
 					SC_Write_func();
-					return;
+					break;
 				}
 				case SC_Seek:
 				{
 					SC_Seek_func();
-					return;
+					break;
 				}
 				case SC_Remove:
 				{
 					SC_Remove_func();
-					return;
+					break;
 				}
 				case SC_SocketTCP : {
+					SC_SocketTCP_func();
 					break;
 				}
 				case SC_Connect :{
 					SC_Connect_func();
-					
 					break;
 				}
 				case SC_Send :{
-					SC_Send_func();
-						
+					SC_Send_func();					
 					break;
 				}
 				case SC_Receive:{
@@ -540,17 +580,23 @@ ExceptionHandler(ExceptionType which)
 					SC_CloseSocket1_func();
 					break;
 				}
+				case SC_PrintString:
+				{	
+					SC_PrintString_func();
+					break;
+				
+				}
 				default:
 				{
 					cerr << "Unexpected system call " << type << "\n";
 					break;
 				}
-				break;
 			}
+			break;
 		}
 		default:
 		{
-			cerr << "Unexpected user mode exception" << (int)which << "\n";
+			cerr << "Unexpected user mode exception " << (int)which << "\n";
 			break;
 		}
 	}

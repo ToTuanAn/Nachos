@@ -107,7 +107,7 @@ class FileSystem {
     bool Remove(char *name) { return Unlink(name) == 0; }
 
 	int findFreeSlotSocket(){
-		for(int i = 2 ; i < 20 ; i++){
+		for(int i = 3 ; i < 20 ; i++){
 			if(socketDT[i] == NULL){
 				return i;
 			}
@@ -139,9 +139,9 @@ class FileSystem {
 	int sendTCP(int socketid, char *buffer, int len){
 		if (socketid < 3 || socketid >= 20 || socketDT[socketid] == NULL) {
         	return -1; // invalid socketid
+    }
 		int sockfd = socketDT[socketid]->socketId;
 		return SendToSocketTCP(sockfd,buffer,len);
-    }
 	}
 	int recvTCP(int socketid,char* buffer, int len){
 		if (socketid < 3 || socketid >= 20 || socketDT[socketid] == NULL) 

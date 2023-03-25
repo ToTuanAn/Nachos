@@ -65,6 +65,8 @@ int SysRemove(char* filename){
 
 }
 
+int SysExit(int id) { return 1; }
+
 int SysOpen(char* filename, int type){
   int freeSlot = kernel->fileSystem->FindFreeSlot();
 
@@ -92,8 +94,25 @@ int SysWrite(char* buffer, int charCount){
 }
 
 
+void SysPrintString(char* buffer, int length) {
+    for (int i = 0; i < length; i++) {
+        kernel->synchConsoleOut->PutChar(buffer[i]);
+    }
+}
 
+char SysReadChar() { return kernel->synchConsoleIn->GetChar(); }
 
+void SysPrintChar(char character) {
+    kernel->synchConsoleOut->PutChar(character);
+}
 
+char* SysReadString(int length) {
+    char* buffer = new char[length + 1];
+    for (int i = 0; i < length; i++) {
+        buffer[i] = SysReadChar();
+    }
+    buffer[length] = '\0';
+    return buffer;
+}
 
 #endif /* ! __USERPROG_KSYSCALL_H__ */

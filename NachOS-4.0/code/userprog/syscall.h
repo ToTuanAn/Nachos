@@ -15,6 +15,14 @@
 
 #include "copyright.h"
 #include "errno.h"
+// #include <stdlib.h>
+// #include <stdio.h>
+// #include <string.h>
+// #include <sys/socket.h>
+// #include <arpa/inet.h>
+// #include <unistd.h>
+// #include <ctype.h>
+
 /* system call codes -- used by the stubs to tell the kernel which system call
  * is being asked for
  */
@@ -40,6 +48,8 @@
 #define SC_Send 18 
 #define SC_Receive 19
 #define SC_CloseSocket1 20
+#define SC_PrintString 21
+#define SC_ReadString 22
 
 #define SC_Add		42
 
@@ -150,6 +160,10 @@ int Seek(int position, OpenFileId id);
  * Return 1 on success, negative error code on failure
  */
 
+void PrintString(char *buffer);
+
+//void ReadString(char *buffer, int length);
+
 int SocketTCP();
 
 int Connect(int socketid, char * ip, int port);
@@ -162,7 +176,7 @@ int CloseSocket1(int socketid);
 int Close(OpenFileId id);
 
 
-void PrintString(char buffer[]);
+//void PrintString(char buffer[]);
 
 
 /* User-level thread operations: Fork and Yield.  To allow multiple

@@ -410,11 +410,11 @@ int FileSystem::initSocketTCP(){
 	} // return index of the socket
 
 int FileSystem::connectSocketTCP(int socketId, char* ip, int port){
-		DEBUG(dbgNet,"bla bla");
+		cerr << "bla bla";
 		if(socketId < 0 || socketId >= 20 || socketDT[socketId] == NULL){
 			return -1;
 		}
-		DEBUG(dbgNet,"Go ConnectSocket function");
+		cerr << "Go ConnectSocket function";
 		return ConnectSocket(socketDT[socketId]->socketId,ip,port);
 		
 	}
@@ -433,18 +433,19 @@ int FileSystem::closeSocketTCP(int socketId){
 	}
 int FileSystem::sendTCP(int socketid, char *buffer, int len){
 		if (socketid < 3 || socketid >= 20 || socketDT[socketid] == NULL) {
-        	return -1; // invalid socketid
+            cerr << "invalid socket id";
+            return -1;
+        }
 		int sockfd = socketDT[socketid]->socketId;
 		return SendToSocketTCP(sockfd,buffer,len);
-    }
 	}
 
 int FileSystem::recvTCP(int socketid,char* buffer, int len){
-	if (socketid < 3 || socketid >= 20 || socketDT[socketid] == NULL) {
+	if (socketid < 3 || socketid >= 20 || socketDT[socketid] == NULL) 
         	return -1; // invalid socketid
 		int sockfd = socketDT[socketid]->socketId;
 		return RecvFromSocketTCP(sockfd,buffer,len);
-    }
+    
 }
 
 #endif // FILESYS_STUB

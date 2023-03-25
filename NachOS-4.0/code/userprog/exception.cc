@@ -442,7 +442,6 @@ ExceptionHandler(ExceptionType which)
 				{
 					SC_PrintChar_func();
 					break;
-
 				}
 				default:
 				{

@@ -187,6 +187,12 @@ delete: delete.o start.o
 	$(LD) $(LDFLAGS) start.o delete.o -o delete.coff
 	$(COFF2NOFF) delete.coff delete
 
+concatenate.o: concatenate.c
+	$(CC) $(CFLAGS) -c concatenate.c
+concatenate: concatenate.o start.o
+	$(LD) $(LDFLAGS) start.o concatenate.o -o concatenate.coff
+	$(COFF2NOFF) concatenate.coff concatenate
+
 clean:
 	$(RM) -f *.o *.ii
 	$(RM) -f *.coff

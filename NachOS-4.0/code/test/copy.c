@@ -2,49 +2,47 @@
 #define MAX_LENGTH 32
 
 
-
 int main()
 {
-	//OpenFileId cua file nguon va file dich
+	//OpenFileId of src file and dest file 
 	int srcFileId;
 	int destFileId;
-	//Do dai file
+	//fileSize of src
 	int fileSize;
-	int i; //Index for loop
-	char c; //Ky tu de in ra
+	int i; //index for loop
+	char c; 
 	char source[6] = "a.txt";
 	char dest[6] = "b.txt";
 
-    srcFileId = Open(source, 1); // Goi ham Open de mo file nguon
+    srcFileId = Open(source, 1); 
 	
-	if (srcFileId != -1) //Kiem tra mo file thanh cong
+	if (srcFileId != -1) //If file is opened
 	{
-		//Tao file moi voi ten la chuoi luu trong "dest"
+		//create dest file
 		destFileId = Create(dest);
 		Close(destFileId);
 		
-		destFileId = Open(dest, 0); // Goi ham Open de mo file dich
-		if (destFileId != -1) //Kiem tra mo file thanh cong
+		destFileId = Open(dest, 0); //open dest file
+		if (destFileId != -1) //If file is opened
 		{
-			// Seek den cuoi file nguon de lay duoc do dai noi dung file nguon (fileSize)
+			// Seek to the end of src file to get the src file size
 			fileSize = Seek(-1, srcFileId);
 			
-			//Chuan bi sao chep
-			Seek(0, srcFileId); // Seek den dau file nguon
-			Seek(0, destFileId); // Seek den dau file dich
+			Seek(0, srcFileId); 
+			Seek(0, destFileId); 
 			i = 0;
 			
-			// Vong lap chay tu dau file nguon den het file nguon
+			// read and write loop
 			for (; i < fileSize; i++) 
 			{
-				Read(&c, 1, srcFileId); //Doc tung ki tu cua file nguon
-				Write(&c, 1, destFileId); //Ghi vao file dich
+				Read(&c, 1, srcFileId); //read char in src file
+				Write(&c, 1, destFileId); //write char to dest file
 			}
 			
-			Close(destFileId); // Goi ham Close de dong file dich
+			Close(destFileId); //close dest file
 		}
 		
-		Close(srcFileId); // Goi ham Close de dong file nguon
+		Close(srcFileId); //close open file
 	}
 
     Halt();

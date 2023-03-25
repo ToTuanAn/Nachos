@@ -26,6 +26,7 @@ int SysAdd(int op1, int op2)
   return op1 + op2;
 }
 
+
 int SysCreate(char* filename){
   if (strlen(filename) == 0)
 	{
@@ -56,7 +57,7 @@ int SysRemove(char* filename){
 		return FALSE;
 	}
 
-  if (!kernel->fileSystem->Remove(filename)) //trigger Create of fileSystem, return -1 if fail
+  if (!kernel->fileSystem->Remove(filename)) //trigger Remove of fileSystem, return -1 if fail
 	{
     return FALSE;
 	}

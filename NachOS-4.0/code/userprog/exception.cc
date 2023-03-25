@@ -154,9 +154,9 @@ void SC_Close_func() {
 }
 
 void SC_Read_func() {
-	int virtAddr = kernel->machine->ReadRegister(4); // Lay dia chi cua tham so buffer tu thanh ghi so 4
-	int charcount = kernel->machine->ReadRegister(5); // Lay charcount tu thanh ghi so 5
-	int id = kernel->machine->ReadRegister(6); // Lay id cua file tu thanh ghi so 6 
+	int virtAddr = kernel->machine->ReadRegister(4); // read file address from reg R4
+	int charcount = kernel->machine->ReadRegister(5); // read charcount from reg R5
+	int id = kernel->machine->ReadRegister(6); // read fileId from reg R6 
 	
 	int OldPos;
 	int NewPos;
@@ -206,7 +206,7 @@ void SC_Read_func() {
 	}
 	else
 	{
-		kernel->machine->WriteRegister(2, -2);
+		kernel->machine->WriteRegister(2, -1);
 	}
 	delete buf;
 	IncreasePC();

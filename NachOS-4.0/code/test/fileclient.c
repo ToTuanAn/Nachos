@@ -42,50 +42,64 @@ int main() {
 		Close(srcFileId); //close open file
 	}
 
-    PrintString(buffer);
-
+    // PrintString(buffer);
+    
         
     socketID = SocketTCP();
     if (socketID < 0) {
         PrintString("Cannot create socket");
         Halt();
     }
+
+    // PrintString(buffer);
   
     if((Connect(socketID,SERVER_IP,PORT)) < 0) {
         PrintString("Cannot connect to server");
         Halt();
     }
-    while (buffer[len] != '\0') ++len;
-    if (Send(socketID, buffer, len) < 0) {
-            PrintString("cannot send");
-            Halt();
-        }
+    
+    while (buffer[len] != '\0') {++len;}
+
+    // PrintString(buffer);
+
+    if (Send(socketID, buffer, len) < 0) 
+    {
+        PrintString("cannot send");
+        Halt();
+    }
+
     byteRec = Receive(socketID,buffer,len);
-    if (byteRec == -1) {
-            PrintString("cannot recv");
-            Halt();
-        }
+
+    if (byteRec == -1) 
+    {
+        PrintString("cannot recv");
+        Halt();
+    }
+
     PrintString("Received message from socket: ");
     PrintString(buffer);
-    PrintString("\n");
-    CloseSocket1(socketID);
-
 
     // Write the response to the output file
     destFileId = Open(dest, 1); 
+    
     if (destFileId != -1) //If file is opened
-    {
+    {   
+        PrintString(buffer);
+        
         Seek(0, destFileId); 
         i = 0;
         
         // read and write loop
         for (; i < fileSize; i++) 
-        {
-            Write(&buffer[i], 1, destFileId);
+        {   
+            
+            Write(buffer[i], 1, destFileId);
         }
 		
 		Close(destFileId); //close open file
 	}
+
+    CloseSocket1(socketID);
 
     
     // Close the output file

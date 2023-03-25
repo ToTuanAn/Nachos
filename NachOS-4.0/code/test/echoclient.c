@@ -13,8 +13,7 @@ int main() {
     int i;
     int sockid;
 
-      
-     
+
     for(i = 0 ; i < 4 ; i++){
         sockets[i] = SocketTCP();
         if (sockets[i] < 0) {
@@ -33,12 +32,15 @@ int main() {
     for(i = 0 ;  i < 4 ; i++){
         sockid = sockets[i];
         buffer = messages[i];
-        while(buffer[len] != '\0') ++len;
+        while(buffer[len] != '\0'){ ++len;}
+
         if (Send(sockid, buffer, len) < 0) {
-        PrintString("cannot send");
-        Halt();
-    }
+            PrintString("cannot send");
+            Halt();
+        }
+
         byteRec = Receive(sockid,buffer,len);
+        PrintString(byteRec);
         if (byteRec == -1) {
         PrintString("cannot recv");
         Halt();

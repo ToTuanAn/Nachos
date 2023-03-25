@@ -266,6 +266,7 @@ void SC_Write_func(){
 		{
 			NewPos = kernel->fileSystem->openf[id]->GetCurrentPos();
 			kernel->machine->WriteRegister(2, NewPos - OldPos);
+			System2User(virtAddr, NewPos - OldPos, buf); 
 			delete buf;
 			IncreasePC();
 			return;
@@ -352,7 +353,6 @@ void SC_SocketTCP_func(){
 	int sockfd = kernel->fileSystem->initSocketTCP(); // index
 	if(sockfd != -1){
 		kernel->machine->WriteRegister(2, sockfd);
-		cerr << sockfd << "\n";
 	}else{
 		cerr<< "Cannot open socket" << "\n";
 		kernel->machine->WriteRegister(2, -1); //cannot open fi
@@ -409,13 +409,15 @@ void SC_Receive_func(){
 	char* buffer;
 	buffer = User2System(virAdd, MaxFileLength); 
 	//
+
 	bytes_recv = kernel->fileSystem->recvTCP(sockID,buffer,len);
 	if (bytes_recv < 0) {
          kernel->machine->WriteRegister(2,-1); // error in receiving data
     } else if (bytes_recv == 0) {
          kernel->machine->WriteRegister(2,0); // connection closed
     }
-     kernel->machine->WriteRegister(2,bytes_recv); // success
+	System2User(virAdd, len, buffer);
+    kernel->machine->WriteRegister(2,bytes_recv); // success
 	IncreasePC();
 	return;
 }
@@ -542,11 +544,11 @@ ExceptionHandler(ExceptionType which)
 					break;
 				}
 				case SC_SocketTCP : {
+					SC_SocketTCP_func();
 					break;
 				}
 				case SC_Connect :{
 					SC_Connect_func();
-					
 					break;
 				}
 				case SC_Send :{

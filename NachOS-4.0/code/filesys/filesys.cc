@@ -424,7 +424,7 @@ int FileSystem::connectSocketTCP(int socketId, char* ip, int port){
     // }
 	// }
 int FileSystem::closeSocketTCP(int socketId){
-		if(socketId < 0 || socketId >= 20 || socketDT[socketId] == NULL){
+		if(socketId < 3 || socketId >= 20 || socketDT[socketId] == NULL){
 			return -1;
 		}
 		delete socketDT[socketId];
@@ -434,17 +434,17 @@ int FileSystem::closeSocketTCP(int socketId){
 int FileSystem::sendTCP(int socketid, char *buffer, int len){
 		if (socketid < 3 || socketid >= 20 || socketDT[socketid] == NULL) {
         	return -1; // invalid socketid
+        }
 		int sockfd = socketDT[socketid]->socketId;
 		return SendToSocketTCP(sockfd,buffer,len);
-    }
 	}
 
 int FileSystem::recvTCP(int socketid,char* buffer, int len){
 	if (socketid < 3 || socketid >= 20 || socketDT[socketid] == NULL) {
         	return -1; // invalid socketid
+    }
 		int sockfd = socketDT[socketid]->socketId;
 		return RecvFromSocketTCP(sockfd,buffer,len);
-    }
 }
 
 #endif // FILESYS_STUB

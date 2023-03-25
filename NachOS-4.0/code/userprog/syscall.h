@@ -42,6 +42,7 @@
 #define SC_CloseSocket1 20
 
 #define SC_Add		42
+#define SC_PrintChar    43
 
 #ifndef IN_ASM
 
@@ -161,6 +162,7 @@ int Receive(int socketid, char * buffer, int len );
 int CloseSocket1(int socketid);
 int Close(OpenFileId id);
 
+void PrintChar(char buffer);
 
 void PrintString(char buffer[]);
 

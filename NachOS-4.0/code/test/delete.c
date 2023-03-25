@@ -4,5 +4,5 @@
 int main()
 {   
     Remove("hello.txt");
-    return 0;
+    Halt();
 }

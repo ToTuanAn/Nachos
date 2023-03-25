@@ -4,6 +4,5 @@
 int main()
 {   
     Create("hello.txt");
-    return 0;
-
+    Halt();
 }

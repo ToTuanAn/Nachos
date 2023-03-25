@@ -128,7 +128,7 @@ void SC_Open_func() {
 
 	if(freeSlot != -1){
 		kernel->machine->WriteRegister(2, freeSlot);
-		cerr << freeSlot << "\n";
+		//cerr << freeSlot << "\n";
 	}else{
 		kernel->machine->WriteRegister(2, -1); //cannot open file
 	}
@@ -156,9 +156,9 @@ void SC_Close_func() {
 }
 
 void SC_Read_func() {
-	int virtAddr = kernel->machine->ReadRegister(4); // Lay dia chi cua tham so buffer tu thanh ghi so 4
-	int charcount = kernel->machine->ReadRegister(5); // Lay charcount tu thanh ghi so 5
-	int id = kernel->machine->ReadRegister(6); // Lay id cua file tu thanh ghi so 6 
+	int virtAddr = kernel->machine->ReadRegister(4); // read file address from reg R4
+	int charcount = kernel->machine->ReadRegister(5); // read charcount from reg R5
+	int id = kernel->machine->ReadRegister(6); // read fileId from reg R6 
 	
 	int OldPos;
 	int NewPos;
@@ -208,7 +208,7 @@ void SC_Read_func() {
 	}
 	else
 	{
-		kernel->machine->WriteRegister(2, -2);
+		kernel->machine->WriteRegister(2, -1);
 	}
 	delete buf;
 	IncreasePC();
@@ -431,8 +431,15 @@ void SC_CloseSocket1_func(){
 	IncreasePC();
 	return;
 }
-
 	
+void SC_PrintChar_func(){
+
+	char c = (char)kernel->machine->ReadRegister(4); // Doc ki tu tu thanh ghi r4
+	SysPrintChar(c);
+
+	IncreasePC(); // Tang Program Counter 
+	return;
+}
 
 
 //----------------------------------------------------------------------
@@ -481,13 +488,13 @@ ExceptionHandler(ExceptionType which)
 				case SC_Create:
 				{
 					SC_CreateFile_func();
-					return;
+					break;
 				}
 				case SC_Add:
 				{
 					
 					SC_Add_func();
-					return;
+					break;
 				}
 				case SC_Open:
 				{
@@ -497,27 +504,32 @@ ExceptionHandler(ExceptionType which)
 				case SC_Close:
 				{
 					SC_Close_func();
-					return;
+					break;
 				}
 				case SC_Read:
 				{
 					SC_Read_func();
-					return;
+					break;
 				}
 				case SC_Write:
 				{
 					SC_Write_func();
-					return;
+					break;
 				}
 				case SC_Seek:
 				{
 					SC_Seek_func();
-					return;
+					break;
 				}
 				case SC_Remove:
 				{
 					SC_Remove_func();
-					return;
+					break;
+				}
+				case SC_PrintChar:
+				{
+					SC_PrintChar_func();
+					break;
 				}
 				case SC_SocketTCP : {
 					break;
@@ -542,7 +554,7 @@ ExceptionHandler(ExceptionType which)
 				}
 				default:
 				{
-					cerr << "Unexpected system call " << type << "\n";
+					//cerr << "Unexpected system call " << type << "\n";
 					break;
 				}
 				break;
@@ -550,7 +562,7 @@ ExceptionHandler(ExceptionType which)
 		}
 		default:
 		{
-			cerr << "Unexpected user mode exception" << (int)which << "\n";
+			//cerr << "Unexpected user mode exception" << (int)which << "\n";
 			break;
 		}
 	}

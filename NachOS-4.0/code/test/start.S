@@ -194,6 +194,14 @@ PrintString:
 	j	$31
 	.end PrintString
 
+	.globl PrintChar
+	.ent	PrintChar
+PrintChar:
+	addiu $2,$0,SC_PrintChar
+	syscall
+	j	$31
+	.end PrintChar
+
         .globl ThreadFork
         .ent    ThreadFork
 ThreadFork:

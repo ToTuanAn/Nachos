@@ -168,12 +168,6 @@ createfile: createfile.o start.o
 	$(LD) $(LDFLAGS) start.o createfile.o -o createfile.coff
 	$(COFF2NOFF) createfile.coff createfile
 
-openfile.o: openfile.c
-	$(CC) $(CFLAGS) -c openfile.c
-openfile: openfile.o start.o
-	$(LD) $(LDFLAGS) start.o openfile.o -o openfile.coff
-	$(COFF2NOFF) openfile.coff openfile
-
 fileclient.o: fileclient.c
 	$(CC) $(CFLAGS) -c fileclient.c
 fileclient: fileclient.o start.o
@@ -192,12 +186,30 @@ client: client.o start.o
 	$(LD) $(LDFLAGS) start.o client.o -o client.coff
 	$(COFF2NOFF) client.coff client
 
+cat.o: cat.c
+	$(CC) $(CFLAGS) -c cat.c
+cat: cat.o start.o
+	$(LD) $(LDFLAGS) start.o cat.o -o cat.coff
+	$(COFF2NOFF) cat.coff cat
 
-removefile.o: removefile.c
-	$(CC) $(CFLAGS) -c removefile.c
-removefile: removefile.o start.o
-	$(LD) $(LDFLAGS) start.o removefile.o -o removefile.coff
-	$(COFF2NOFF) removefile.coff removefile
+copy.o: copy.c
+	$(CC) $(CFLAGS) -c copy.c
+copy: copy.o start.o
+	$(LD) $(LDFLAGS) start.o copy.o -o copy.coff
+	$(COFF2NOFF) copy.coff copy
+
+delete.o: delete.c
+	$(CC) $(CFLAGS) -c delete.c
+delete: delete.o start.o
+	$(LD) $(LDFLAGS) start.o delete.o -o delete.coff
+	$(COFF2NOFF) delete.coff delete
+
+concatenate.o: concatenate.c
+	$(CC) $(CFLAGS) -c concatenate.c
+concatenate: concatenate.o start.o
+	$(LD) $(LDFLAGS) start.o concatenate.o -o concatenate.coff
+	$(COFF2NOFF) concatenate.coff concatenate
+
 
 clean:
 	$(RM) -f *.o *.ii

@@ -20,8 +20,8 @@ int main()
     char buffer[MAX_MSG_LENGTH] = {0};
 
     // Create a TCP socket
-    server_fd = SocketTCP();
-    if (server_fd == 0)
+    server_fd = socket(AF_INET, SOCK_STREAM,0);
+    if (server_fd < 0)
     {
         perror("socket failed");
         exit(EXIT_FAILURE);

@@ -146,8 +146,8 @@ Seek:
 	j	$31
 	.end Seek
 
-        .globl ThreadFork
-        .ent    ThreadFork
+        .globl SocketTCP
+        .ent    SocketTCP
 SocketTCP:
 	addiu $2,$0,SC_SocketTCP
 	syscall
@@ -185,6 +185,14 @@ CloseSocket1:
 	syscall
 	j	$31
 	.end CloseSocket1
+
+        .globl PrintString
+        .ent    PrintString
+PrintString:
+	addiu $2,$0,SC_PrintString
+	syscall
+	j	$31
+	.end PrintString
 
         .globl ThreadFork
         .ent    ThreadFork

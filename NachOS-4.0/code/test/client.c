@@ -1,57 +1,50 @@
 
-// // #include <string.h> // strlen, memset
-// // #include <stdio.h>
-// // #include <stdlib.h>
-// // #include <string.h>
-// // #include "syscall.h"
+#include "syscall.h"
 
-// #ifdef UNIX
-// #include <string.h> // strlen, memset
-// #include <stdio.h>
-// #include <stdlib.h>
-// #include <string.h>
-// #include "syscall.h"
-// #define Exit exit
-// #else
-// #include "syscall.h"
-// #endif /* UNIX */
 
-// #define SERVER_IP "127.0.0.1"
-// #define PORT 8080
-// #define MAX_MSG_LENGTH 1024
+#define SERVER_IP "127.0.0.1"
+#define PORT 8080
+#define MAX_MSG_LENGTH 1024
 
-// const char message[] = "Hello sockets hehhehe\n";
+//const char message[] = "Hello sockets hehhehe\n";
 
-// int main() {
+int main() {
 
-//   int socketID;
-//   char buffer[1024];
+  int socketID;
+  int byteRec;
+  char* buffer;
+  char* buffer2;
+  int len = 0;
 
-//   socketID = socketTCP();
-//   if (socketID < 0) {
-//     perror("Cannot create socket");
-//     exit(1);
-//   }
+  socketID = SocketTCP();
+  if (socketID < 0) {
+    PrintString("Cannot create socket");
+    Halt();
+  }
   
-//   if ((Connect(socketID,SERVER_IP,PORT)) < 0) {
-//     perror("Cannot connect to server");
-//     exit(2);
-//   }
-//   sprintf(buffer, "message from socket");
-//   if (Send(socketID, buffer, strlen(buffer)) < 0) {
-//             perror("send");
-//             exit(1);
-//         }
-//   memset(buffer, 0, sizeof(buffer));
-//   if (Receive(socketID, buffer, strlen(buffer)) == -1) {
-//             perror("recv");
-//             exit(1);
-//         }
-//   printf("Received message from socket:", buffer);
+  if ((Connect(socketID,SERVER_IP,PORT)) < 0) {
+    PrintString("Cannot connect to server");
+    Halt();
+  }
+  buffer = "thanh cong roiii";
+  while (buffer[len] != '\0') ++len;
+  if (Send(socketID, buffer, len) < 0) {
+            PrintString("cannot send");
+            Halt();
+        }
+  //memset(buffer, 0, sizeof(buffer));
+  buffer2[len];
+  byteRec = Receive(socketID,buffer,len);
+  if (byteRec == -1) {
+            PrintString("cannot recv");
+            Halt();
+        }
+  PrintString("Received message from socket:");
+  PrintString(buffer);
 
-//   CloseSocket1(socketID);
-//   return 0;
-// }
+  CloseSocket1(socketID);
+  return 0;
+}
 
 /* halt.c
  *	Simple program to test whether running a user program works.
@@ -65,12 +58,12 @@
  *	be careful to allocate a big enough stack to hold the automatics!
  */
 
-#include "syscall.h"
+// #include "syscall.h"
 
-int
-main()
-{
-    int sockid = SocketTCP();
+// int
+// main()
+// {
+//     int sockid = SocketTCP();
 
-    /* not reached */
-}
+//     /* not reached */
+// }

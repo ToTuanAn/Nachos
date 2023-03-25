@@ -5,24 +5,45 @@
 #define PORT 8080
 #define MAX_MSG_LENGTH 1024
 
-int main(int argc, char *argv[]) {
+int main() {
     int socketID;
     int byteRec;
-    char* buffer;
+    char buffer[MAX_MSG_LENGTH];
     int len = 0;
-    if (argc != 3) {
-        PrintString("Incorrect syntax, try again");
-        Halt();
-    }
 
-    char *input_file = argv[1];
-    char *output_file = argv[2];
+    int srcFileId;
+	int destFileId;
+	//fileSize of src
+	int fileSize;
+	int i; //index for loop
+	char c; 
+    char source[6] = "a.txt";
+	char dest[6] = "b.txt";
+
 
     // Open the input file
+    srcFileId = Open(source, 1); 
+    if (srcFileId != -1) //If file is opened
+    {
+		fileSize = Seek(-1, srcFileId);
+			
+        Seek(0, srcFileId); 
+        i = 0;
+        
+        // read and write loop
+        for (; i < fileSize; i++) 
+        {
+            Read(&c, 1, srcFileId); //read char in src file
+            buffer[i] = c;
+        }
+		
+        buffer[fileSize] = '\0';
 
-    // Get the file size
+		Close(srcFileId); //close open file
+	}
 
-    // Read the file content
+    PrintString(buffer);
+
         
     socketID = SocketTCP();
     if (socketID < 0) {
@@ -51,6 +72,21 @@ int main(int argc, char *argv[]) {
 
 
     // Write the response to the output file
+    destFileId = Open(dest, 1); 
+    if (destFileId != -1) //If file is opened
+    {
+        Seek(0, destFileId); 
+        i = 0;
+        
+        // read and write loop
+        for (; i < fileSize; i++) 
+        {
+            Write(&buffer[i], 1, destFileId);
+        }
+		
+		Close(destFileId); //close open file
+	}
+
     
     // Close the output file
     

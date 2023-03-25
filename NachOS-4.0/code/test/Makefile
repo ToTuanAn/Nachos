@@ -105,14 +105,14 @@ CC = $(GCCDIR)gcc
 AS = $(GCCDIR)as
 LD = $(GCCDIR)ld
 
-INCDIR =-I../userprog -I../lib
-CFLAGS = -G 0 -c $(INCDIR) -B../../../usr/local/nachos/lib/gcc-lib/decstation-ultrix/2.95.2/ -B../../../usr/local/nachos/decstation-ultrix/bin/
+INCDIR =-I../userprog -I../lib 
+CFLAGS = -G 0 -c $(INCDIR) -B../../../usr/local/nachos/lib/gcc-lib/decstation-ultrix/2.95.2/ -B../../../usr/local/nachos/decstation-ultrix/bin/ 
 
 ifeq ($(hosttype),unknown)
 PROGRAMS = unknownhost
 else
 # change this if you create a new test program!
-PROGRAMS = add halt shell matmult sort segments
+PROGRAMS = add halt matmult sort segments createfile client echoclient
 endif
 
 all: $(PROGRAMS)
@@ -128,16 +128,21 @@ halt: halt.o start.o
 
 add.o: add.c
 	$(CC) $(CFLAGS) -c add.c
-
 add: add.o start.o
 	$(LD) $(LDFLAGS) start.o add.o -o add.coff
 	$(COFF2NOFF) add.coff add
 
-shell.o: shell.c
-	$(CC) $(CFLAGS) -c shell.c
-shell: shell.o start.o
-	$(LD) $(LDFLAGS) start.o shell.o -o shell.coff
-	$(COFF2NOFF) shell.coff shell
+print.o: print.c
+	$(CC) $(CFLAGS) -c print.c
+print: print.o start.o
+	$(LD) $(LDFLAGS) start.o print.o -o print.coff
+	$(COFF2NOFF) print.coff print
+
+# shell.o: shell.c
+# 	$(CC) $(CFLAGS) -c shell.c
+# shell: shell.o start.o
+# 	$(LD) $(LDFLAGS) start.o shell.o -o shell.coff
+# 	$(COFF2NOFF) shell.coff shell
 
 sort.o: sort.c
 	$(CC) $(CFLAGS) -c sort.c
@@ -163,11 +168,23 @@ createfile: createfile.o start.o
 	$(LD) $(LDFLAGS) start.o createfile.o -o createfile.coff
 	$(COFF2NOFF) createfile.coff createfile
 
-openfile.o: openfile.c
-	$(CC) $(CFLAGS) -c openfile.c
-openfile: openfile.o start.o
-	$(LD) $(LDFLAGS) start.o openfile.o -o openfile.coff
-	$(COFF2NOFF) openfile.coff openfile
+# fileclient.o: fileclient.c
+# 	$(CC) $(CFLAGS) -c fileclient.c
+# fileclient: fileclient.o start.o
+# 	$(LD) $(LDFLAGS) start.o fileclient.o -o fileclient.coff
+# 	$(COFF2NOFF) fileclient.coff fileclient
+
+echoclient.o: echoclient.c
+	$(CC) $(CFLAGS) -c echoclient.c
+echoclient: echoclient.o start.o
+	$(LD) $(LDFLAGS) start.o echoclient.o -o echoclient.coff
+	$(COFF2NOFF) echoclient.coff echoclient
+
+client.o: client.c
+	$(CC) $(CFLAGS) -c client.c
+client: client.o start.o
+	$(LD) $(LDFLAGS) start.o client.o -o client.coff
+	$(COFF2NOFF) client.coff client
 
 cat.o: cat.c
 	$(CC) $(CFLAGS) -c cat.c
@@ -192,6 +209,7 @@ concatenate.o: concatenate.c
 concatenate: concatenate.o start.o
 	$(LD) $(LDFLAGS) start.o concatenate.o -o concatenate.coff
 	$(COFF2NOFF) concatenate.coff concatenate
+
 
 clean:
 	$(RM) -f *.o *.ii

@@ -25,6 +25,8 @@
 #include "main.h"
 #include "syscall.h"
 #include "ksyscall.h"
+#include "filesys.h"
+#include "sys/socket.h"
 
 #define MaxFileLength 32 
 
@@ -345,6 +347,91 @@ void SC_Remove_func(){
 	return;
 }
 
+void SC_SocketTCP_func(){
+
+	int sockfd = kernel->fileSystem->initSocketTCP(); // index
+	if(sockfd != -1){
+		kernel->machine->WriteRegister(2, sockfd);
+		cerr << sockfd << "\n";
+	}else{
+		cerr<< "Cannot open socket" << "\n";
+		kernel->machine->WriteRegister(2, -1); //cannot open fi
+
+	}
+
+	IncreasePC();
+	return;
+}
+
+void SC_Connect_func(){
+	int sockID = kernel->machine->ReadRegister(4); //read socket id from reg R4
+	int virIP = kernel->machine->ReadRegister(5); //read type from reg R5
+	int port = kernel->machine->ReadRegister(6);
+	char* ip;
+	int status;
+	ip = User2System(virIP, MaxFileLength); //
+	status = kernel->fileSystem->connectSocketTCP(sockID,ip,port);
+	if(status == -1){
+		kernel->machine->WriteRegister(2,-1);
+	} else {
+		kernel->machine->WriteRegister(2,status);
+	}
+	
+	IncreasePC();
+	return;
+}
+
+void SC_Send_func(){
+	//load parameter
+	int bytes_sent;
+	int sockID = kernel->machine->ReadRegister(4); 
+	int virAdd = kernel->machine->ReadRegister(5); 
+	int len = kernel->machine->ReadRegister(6);
+	char* buffer;
+	buffer = User2System(virAdd, MaxFileLength); 
+	bytes_sent = kernel->fileSystem->sendTCP(sockID,buffer,len);
+	if (bytes_sent < 0) {
+       kernel->machine->WriteRegister(2,-1); // error in sending data
+    } else if (bytes_sent == 0) {
+        kernel->machine->WriteRegister(2,0);; // connection closed
+    }
+    kernel->machine->WriteRegister(2,bytes_sent);// success
+
+	IncreasePC();
+	return;
+}
+
+void SC_Receive_func(){
+	int bytes_recv;
+	int sockID = kernel->machine->ReadRegister(4); 
+	int virAdd = kernel->machine->ReadRegister(5); 
+	int len = kernel->machine->ReadRegister(6);
+	char* buffer;
+	buffer = User2System(virAdd, MaxFileLength); 
+	//
+	bytes_recv = kernel->fileSystem->recvTCP(sockID,buffer,len);
+	if (bytes_recv < 0) {
+         kernel->machine->WriteRegister(2,-1); // error in receiving data
+    } else if (bytes_recv == 0) {
+         kernel->machine->WriteRegister(2,0); // connection closed
+    }
+     kernel->machine->WriteRegister(2,bytes_recv); // success
+	IncreasePC();
+	return;
+}
+
+void SC_CloseSocket1_func(){
+	int socketID = kernel->machine->ReadRegister(4);
+	int status = kernel->fileSystem->closeSocketTCP(socketID);
+	if(status < -1){
+		kernel->machine->WriteRegister(2,-1);\
+	} else {
+		kernel->machine->WriteRegister(2,0);
+	}
+	IncreasePC();
+	return;
+}
+	
 void SC_PrintChar_func(){
 
 	char c = (char)kernel->machine->ReadRegister(4); // Doc ki tu tu thanh ghi r4
@@ -353,6 +440,17 @@ void SC_PrintChar_func(){
 	IncreasePC(); // Tang Program Counter 
 	return;
 }
+
+void SC_PrintString_func(){
+	 int memPtr = kernel->machine->ReadRegister(4);  // read address of C-string
+    char* buffer = User2System(memPtr,MaxFileLength);
+
+    SysWrite(buffer, strlen(buffer));
+    delete[] buffer;
+    IncreasePC();
+	return;
+}
+
 
 //----------------------------------------------------------------------
 // ExceptionHandler
@@ -441,6 +539,32 @@ ExceptionHandler(ExceptionType which)
 				case SC_PrintChar:
 				{
 					SC_PrintChar_func();
+					break;
+				}
+				case SC_SocketTCP : {
+					break;
+				}
+				case SC_Connect :{
+					SC_Connect_func();
+					
+					break;
+				}
+				case SC_Send :{
+					SC_Send_func();
+						
+					break;
+				}
+				case SC_Receive:{
+					SC_Receive_func();
+					break;
+				}
+				case SC_CloseSocket1:{
+					SC_CloseSocket1_func();
+					break;
+				}
+				case SC_PrintString:
+				{
+					SC_PrintString_func();
 					break;
 				}
 				default:

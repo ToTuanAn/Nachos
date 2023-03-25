@@ -35,8 +35,16 @@
 #define SC_ThreadExit   14
 #define SC_ThreadJoin   15
 
+#define SC_SocketTCP 16
+#define SC_Connect 17 
+#define SC_Send 18 
+#define SC_Receive 19
+#define SC_CloseSocket1 20
+#define SC_PrintString 21
+
 #define SC_Add		42
 #define SC_PrintChar    43
+
 
 #ifndef IN_ASM
 
@@ -144,6 +152,16 @@ int Seek(int position, OpenFileId id);
 /* Close the file, we're done reading and writing to it.
  * Return 1 on success, negative error code on failure
  */
+
+int SocketTCP();
+
+int Connect(int socketid, char * ip, int port);
+
+int Send(int socketid, char *buffer, int len);
+
+int Receive(int socketid, char * buffer, int len );
+
+int CloseSocket1(int socketid);
 int Close(OpenFileId id);
 
 void PrintChar(char buffer);

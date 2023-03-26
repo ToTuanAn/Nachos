@@ -266,7 +266,7 @@ void SC_Write_func(){
 		{
 			NewPos = kernel->fileSystem->openf[id]->GetCurrentPos();
 			kernel->machine->WriteRegister(2, NewPos - OldPos);
-			System2User(virtAddr, NewPos - OldPos, buf); 
+			//System2User(virtAddr, NewPos - OldPos, buf); 
 			delete buf;
 			IncreasePC();
 			return;

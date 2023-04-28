@@ -64,7 +64,7 @@ class OpenFile {
 		currentOffset = Tell(file);
 		return currentOffset;
 	}	
-    
+	
   private:
     int file;
     int currentOffset;	

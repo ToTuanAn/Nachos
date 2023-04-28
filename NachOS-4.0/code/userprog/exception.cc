@@ -274,7 +274,7 @@ void SC_Write_func(){
 	}
 
 	if (id == 1) // Xet truong hop con lai ghi file stdout (type quy uoc la 3)
-	{
+	{	
 		int size = SysWrite(buf, charcount);
 		kernel->machine->WriteRegister(2, size); // Tra ve so byte thuc su write duoc
 		delete buf;
@@ -444,7 +444,7 @@ void SC_PrintChar_func(){
 }
 
 void SC_PrintString_func(){
-	 int memPtr = kernel->machine->ReadRegister(4);  // read address of C-string
+	int memPtr = kernel->machine->ReadRegister(4);  // read address of C-string
     char* buffer = User2System(memPtr,MaxFileLength);
 
     SysWrite(buffer, strlen(buffer));
@@ -452,6 +452,117 @@ void SC_PrintString_func(){
     IncreasePC();
 	return;
 }
+
+void SC_Exec_func(){
+	int pid;
+	int virtAddr = kernel->machine->ReadRegister(4); // read file address from reg R4
+	char* filename = User2System(virtAddr, MaxFileLength);
+
+	if (strlen(filename) == 0){
+		kernel->machine->WriteRegister(2, -1);
+		IncreasePC();
+		return;
+	}	
+	cerr << "hmmm" << "\n";
+	pid = kernel->pTab->ExecUpdate(filename);
+	
+	if (pid == -1){
+		kernel->machine->WriteRegister(2, -1);
+		IncreasePC();
+		return;
+	}
+
+	kernel->machine->WriteRegister(2, pid);
+
+	IncreasePC();
+	return;
+}
+
+void SC_Join_func(){
+	cerr << "Join" << "\n";
+	int id = kernel->machine->ReadRegister(4);
+	int joinId;
+
+	joinId = SysJoin(id);
+    kernel->machine->WriteRegister(2, joinId);
+	cerr << joinId << "\n";
+	
+	IncreasePC();
+	return;	
+}
+
+void SC_Exit_func() {
+    int id = kernel->machine->ReadRegister(4);
+    kernel->machine->WriteRegister(2, SysExit(id));
+
+	IncreasePC();
+    return;
+}
+
+void SC_CreateSemaphore_func() {
+    int virtAddr = kernel->machine->ReadRegister(4);
+    int semval = kernel->machine->ReadRegister(5);
+
+    char* name = User2System(virtAddr,MaxFileLength);
+    if (name == NULL) {
+        DEBUG(dbgSys, "\n Not enough memory in System");
+        ASSERT(false);
+        kernel->machine->WriteRegister(2, -1);
+        delete[] name;
+
+		IncreasePC();
+        return;
+    }
+
+    kernel->machine->WriteRegister(2, SysCreateSemaphore(name, semval));
+    delete[] name;
+
+	IncreasePC();
+    return;
+}
+
+void SC_Wait_func() {
+    int virtAddr = kernel->machine->ReadRegister(4);
+
+    char* name = User2System(virtAddr, MaxFileLength);
+    if (name == NULL) {
+        DEBUG(dbgSys, "\n Not enough memory in System");
+        ASSERT(false);
+        kernel->machine->WriteRegister(2, -1);
+        delete[] name;
+
+		IncreasePC();
+        return;
+    }
+
+    kernel->machine->WriteRegister(2, SysWait(name));
+    delete[] name;
+
+	IncreasePC();
+    return;
+}
+
+void SC_Signal_func() {
+    int virtAddr = kernel->machine->ReadRegister(4);
+
+    char* name = User2System(virtAddr, MaxFileLength);
+    if (name == NULL) {
+        DEBUG(dbgSys, "\n Not enough memory in System");
+        ASSERT(false);
+        kernel->machine->WriteRegister(2, -1);
+        delete[] name;
+
+		IncreasePC();
+        return;
+    }
+
+    kernel->machine->WriteRegister(2, SysSignal(name));
+    delete[] name;
+
+	IncreasePC();
+    return;
+}
+
 
 
 //----------------------------------------------------------------------
@@ -567,6 +678,36 @@ ExceptionHandler(ExceptionType which)
 				case SC_PrintString:
 				{
 					SC_PrintString_func();
+					break;
+				}
+				case SC_Exec:
+				{
+					SC_Exec_func();
+					break;
+				}
+				case SC_Join:
+				{
+					SC_Join_func();
+					break;
+				}
+				case SC_Exit:
+				{
+					SC_Exit_func();
+					break;
+				}
+				case SC_CreateSemaphore:
+				{
+					SC_CreateSemaphore_func();
+					break;
+				}
+				case SC_Signal:
+				{
+					SC_Signal_func();
+					break;
+				}
+				case SC_Wait:
+				{
+					SC_Wait_func();
 					break;
 				}
 				default:

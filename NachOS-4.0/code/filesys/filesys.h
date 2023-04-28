@@ -57,6 +57,21 @@ class FileSystem {
 	OpenFileSocket** socketDT;
 	int index;
 
+	FileSystem() {
+        openf = new OpenFile*[20];
+		socketDT = new OpenFileSocket*[20];
+		index = 0;
+		for (int i = 0; i < 20; ++i)
+		{
+			openf[i] = NULL;
+			socketDT[i] = NULL;
+		}   
+		this->Create("stdin");
+		this->Create("stdout");
+		openf[index++] = this->Open("stdin", 0);
+		openf[index++] = this->Open("stdout", 0);  
+    }
+
 	FileSystem(bool format) {
 		openf = new OpenFile*[20];
 		socketDT = new OpenFileSocket*[20];
@@ -68,8 +83,8 @@ class FileSystem {
 		}   
 		this->Create("stdin");
 		this->Create("stdout");
-		openf[index++] = this->Open("stdin", 1);
-		openf[index++] = this->Open("stdout", 1);  
+		openf[index++] = this->Open("stdin", 0);
+		openf[index++] = this->Open("stdout", 0);  
 	}
 
     bool Create(char *name) {
@@ -160,6 +175,13 @@ class FileSystem {
 		socketDT[socketId] = NULL;
 		return 0;
 	}
+
+	void Renew(int id) {
+        for (int i = 0; i < SIZE_MAX; i++) {
+            delete openf[index];
+            openf[index] = NULL;
+        }
+    }
 
 };
 

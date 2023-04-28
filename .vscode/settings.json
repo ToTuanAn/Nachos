@@ -2,6 +2,10 @@
     "files.associations": {
         "iostream": "cpp",
         "typeinfo": "cpp",
-        "new": "cpp"
-    }
+        "new": "cpp",
+        "*.tcc": "c",
+        "numeric": "c",
+        "ostream": "c"
+    },
+    "C_Cpp.errorSquiggles": "disabled"
 }

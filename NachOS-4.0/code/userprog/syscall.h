@@ -44,6 +44,9 @@
 
 #define SC_Add		42
 #define SC_PrintChar    43
+#define SC_CreateSemaphore 44
+#define SC_Signal 45
+#define SC_Wait 46
 
 
 #ifndef IN_ASM
@@ -95,6 +98,11 @@ SpaceId ExecV(int argc, char* argv[]);
  */
 int Join(SpaceId id); 	
  
+int CreateSemaphore(char *name, int semval);
+
+int Wait(char *name);
+
+int Signal(char *name);
 
 /* File system operations: Create, Remove, Open, Read, Write, Close
  * These functions are patterned after UNIX -- files represent
@@ -162,6 +170,7 @@ int Send(int socketid, char *buffer, int len);
 int Receive(int socketid, char * buffer, int len );
 
 int CloseSocket1(int socketid);
+
 int Close(OpenFileId id);
 
 void PrintChar(char buffer);

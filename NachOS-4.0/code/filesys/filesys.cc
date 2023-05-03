@@ -79,81 +79,67 @@
 //	"format" -- should we initialize the disk?
 //----------------------------------------------------------------------
 
-FileSystem::FileSystem(bool format)
-{ 
+FileSystem::FileSystem(bool format) {
     DEBUG(dbgFile, "Initializing the file system.");
     if (format) {
         PersistentBitmap *freeMap = new PersistentBitmap(NumSectors);
         Directory *directory = new Directory(NumDirEntries);
-	FileHeader *mapHdr = new FileHeader;
-	FileHeader *dirHdr = new FileHeader;
+        FileHeader *mapHdr = new FileHeader;
+        FileHeader *dirHdr = new FileHeader;
 
         DEBUG(dbgFile, "Formatting the file system.");
 
-    // First, allocate space for FileHeaders for the directory and bitmap
-    // (make sure no one else grabs these!)
-	freeMap->Mark(FreeMapSector);	    
-	freeMap->Mark(DirectorySector);
+        // First, allocate space for FileHeaders for the directory and bitmap
+        // (make sure no one else grabs these!)
+        freeMap->Mark(FreeMapSector);
+        freeMap->Mark(DirectorySector);
 
-    // Second, allocate space for the data blocks containing the contents
-    // of the directory and bitmap files.  There better be enough space!
+        // Second, allocate space for the data blocks containing the contents
+        // of the directory and bitmap files.  There better be enough space!
 
-	ASSERT(mapHdr->Allocate(freeMap, FreeMapFileSize));
-	ASSERT(dirHdr->Allocate(freeMap, DirectoryFileSize));
+        ASSERT(mapHdr->Allocate(freeMap, FreeMapFileSize));
+        ASSERT(dirHdr->Allocate(freeMap, DirectoryFileSize));
 
-    // Flush the bitmap and directory FileHeaders back to disk
-    // We need to do this before we can "Open" the file, since open
-    // reads the file header off of disk (and currently the disk has garbage
-    // on it!).
+        // Flush the bitmap and directory FileHeaders back to disk
+        // We need to do this before we can "Open" the file, since open
+        // reads the file header off of disk (and currently the disk has garbage
+        // on it!).
 
         DEBUG(dbgFile, "Writing headers back to disk.");
-	mapHdr->WriteBack(FreeMapSector);    
-	dirHdr->WriteBack(DirectorySector);
+        mapHdr->WriteBack(FreeMapSector);
+        dirHdr->WriteBack(DirectorySector);
 
-    // OK to open the bitmap and directory files now
-    // The file system operations assume these two files are left open
-    // while Nachos is running.
+        // OK to open the bitmap and directory files now
+        // The file system operations assume these two files are left open
+        // while Nachos is running.
 
         freeMapFile = new OpenFile(FreeMapSector);
         directoryFile = new OpenFile(DirectorySector);
-     
-    // Once we have the files "open", we can write the initial version
-    // of each file back to disk.  The directory at this point is completely
-    // empty; but the bitmap has been changed to reflect the fact that
-    // sectors on the disk have been allocated for the file headers and
-    // to hold the file data for the directory and bitmap.
+
+        // Once we have the files "open", we can write the initial version
+        // of each file back to disk.  The directory at this point is completely
+        // empty; but the bitmap has been changed to reflect the fact that
+        // sectors on the disk have been allocated for the file headers and
+        // to hold the file data for the directory and bitmap.
 
         DEBUG(dbgFile, "Writing bitmap and directory back to disk.");
-	freeMap->WriteBack(freeMapFile);	 // flush changes to disk
-	directory->WriteBack(directoryFile);
+        freeMap->WriteBack(freeMapFile);  // flush changes to disk
+        directory->WriteBack(directoryFile);
 
-	if (debug->IsEnabled('f')) {
-	    freeMap->Print();
-	    directory->Print();
+        if (debug->IsEnabled('f')) {
+            freeMap->Print();
+            directory->Print();
         }
-        delete freeMap; 
-	delete directory; 
-	delete mapHdr; 
-	delete dirHdr;
+        delete freeMap;
+        delete directory;
+        delete mapHdr;
+        delete dirHdr;
     } else {
-    // if we are not formatting the disk, just open the files representing
-    // the bitmap and directory; these are left open while Nachos is running
+        // if we are not formatting the disk, just open the files representing
+        // the bitmap and directory; these are left open while Nachos is running
         freeMapFile = new OpenFile(FreeMapSector);
         directoryFile = new OpenFile(DirectorySector);
     }
-
-    openf = new OpenFile*[15];
-    socketDT = new OpenFileSocket*[20];
-	index = 0;
-	for (int i = 0; i < 15; ++i)
-	{
-		openf[i] = NULL;
-        socketDT[i] = NULL;
-	}
-	this->Create("stdin");
-	this->Create("stdout");
-	openf[index++] = this->Open("stdin", 0);
-	openf[index++] = this->Open("stdout", 0); 
 }
 
 //----------------------------------------------------------------------
@@ -265,9 +251,9 @@ OpenFile* FileSystem::Open(char *name, int type)
 	directory->FetchFrom(directoryFile);
 	sector = directory->Find(name);
 	if (sector >= 0)
-		openf[freeSlot] = new OpenFile(sector, type);	// name was found in directory 
+		openFile = new OpenFile(sector, type);	// name was found in directory 
 	delete directory;
-	return openf[freeSlot];				// return NULL if not found
+	return openFile;				// return NULL if not found
 }
 
 //----------------------------------------------------------------------
@@ -377,15 +363,6 @@ FileSystem::Print()
 //----------------------------------------------------------------------
 
 
-int FileSystem::FindFreeSlot()
-{
-	for(int i = 2; i < 20; i++)
-	{
-		if(openf[i] == NULL) return i;		
-	}
-	return -1;
-}
-
 int FileSystem::findFreeSlotSocket(){
 		for(int i = 3 ; i < 20 ; i++){
 			if(socketDT[i] == NULL){
@@ -446,5 +423,22 @@ int FileSystem::recvTCP(int socketid,char* buffer, int len){
 		int sockfd = socketDT[socketid]->socketId;
 		return RecvFromSocketTCP(sockfd,buffer,len);
 }
+#else  // FILESYS_STUB
+#include "copyright.h"
+#include "sysdep.h"
+#include "openfile.h"
+#include "filetable.h"
+#include "filesys.h"
+#include "kernel.h"
+#include "main.h"
+
+OpenFile *FileSystem::Open(char *name) {
+    int fileDescriptor = OpenForReadWrite(name, FALSE);
+
+    if (fileDescriptor == -1) return NULL;
+    return new OpenFile(fileDescriptor);
+}
+
+int FileSystem::FileTableIndex() { return kernel->currentThread->processID; };
 
 #endif // FILESYS_STUB

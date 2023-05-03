@@ -60,6 +60,5 @@ int main()
 		Close(srcFileId2); //close the src2 file
 	}
 
-    Halt();
 	return 0;
 }

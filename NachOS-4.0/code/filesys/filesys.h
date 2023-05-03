@@ -35,6 +35,7 @@
 
 #include "copyright.h"
 #include "sysdep.h"
+#include "filetable.h"
 #include "openfile.h"
 
 #ifdef FILESYS_STUB 		// Temporarily implement file system calls as 
@@ -53,71 +54,61 @@ struct OpenFileSocket {
 
 class FileSystem {
   public:
-  	OpenFile** openf; //check file is opened
 	OpenFileSocket** socketDT;
-	int index;
+	FileTable **fileTable;
 
-	FileSystem() {
-        openf = new OpenFile*[20];
+    FileSystem() {
+        fileTable = new FileTable *[20];
 		socketDT = new OpenFileSocket*[20];
-		index = 0;
-		for (int i = 0; i < 20; ++i)
-		{
-			openf[i] = NULL;
+        for (int i = 0; i < 20; i++) {
+            fileTable[i] = new FileTable;
 			socketDT[i] = NULL;
-		}   
-		this->Create("stdin");
-		this->Create("stdout");
-		openf[index++] = this->Open("stdin", 0);
-		openf[index++] = this->Open("stdout", 0);  
+        }
     }
 
-	FileSystem(bool format) {
-		openf = new OpenFile*[20];
-		socketDT = new OpenFileSocket*[20];
-		index = 0;
-		for (int i = 0; i < 20; ++i)
-		{
-			openf[i] = NULL;
-			socketDT[i] = NULL;
-		}   
-		this->Create("stdin");
-		this->Create("stdout");
-		openf[index++] = this->Open("stdin", 0);
-		openf[index++] = this->Open("stdout", 0);  
-	}
+    ~FileSystem() {
+        for (int i = 0; i < 20; i++) {
+            delete fileTable[i];
+			delete socketDT[i];
+        }
+        delete[] fileTable;
+    }
 
     bool Create(char *name) {
-		int fileDescriptor = OpenForWrite(name);
+        int fileDescriptor = OpenForWrite(name);
 
-		if (fileDescriptor == -1) return FALSE;
-		Close(fileDescriptor); 
-		return TRUE; 
-	}
+        if (fileDescriptor == -1) return FALSE;
+        Close(fileDescriptor);
+        return TRUE;
+    }
 
-    OpenFile* Open(char *name) {
-	  int fileDescriptor = OpenForReadWrite(name, FALSE);
+    OpenFile *Open(char *name);
 
-	  if (fileDescriptor == -1) return NULL;
-	  return new OpenFile(fileDescriptor);
-      }
+    int FileTableIndex();
 
-	OpenFile* Open(char *name, int type) {
-		int fileDescriptor = OpenForReadWrite(name, FALSE);
+    void Renew(int id) {
+        for (int i = 0; i < SIZE_MAX; i++) {
+            fileTable[id]->Remove(i);
+        }
+    }
 
-		if (fileDescriptor == -1) return NULL;
-		//index++;
-		return new OpenFile(fileDescriptor, type);
-	}
+    int Open(char *name, int openMode) {
+        return fileTable[FileTableIndex()]->Insert(name, openMode);
+    }
 
-	int FindFreeSlot()
-	{
-		for(int i = 2; i < 20; i++)
-		{
-			if(openf[i] == NULL) return i;		
-		}
-		return -1;
-	}
+    int Close(int id) { return fileTable[FileTableIndex()]->Remove(id); }
+
+    int Read(char *buffer, int charCount, int id) {
+        return fileTable[FileTableIndex()]->Read(buffer, charCount, id);
+    }
+
+    int Write(char *buffer, int charCount, int id) {
+        return fileTable[FileTableIndex()]->Write(buffer, charCount, id);
+    }
+
+    int Seek(int position, int id) {
+        return fileTable[FileTableIndex()]->Seek(position, id);
+    }
 
     bool Remove(char *name) { return Unlink(name) == 0; }
 
@@ -176,13 +167,6 @@ class FileSystem {
 		return 0;
 	}
 
-	void Renew(int id) {
-        for (int i = 0; i < SIZE_MAX; i++) {
-            delete openf[index];
-            openf[index] = NULL;
-        }
-    }
-
 };
 
 #else // FILESYS
@@ -197,10 +181,6 @@ struct OpenFileSocket {
 };
 class FileSystem {
   public:
-  	OpenFile** openf; //check if file is opened
-	OpenFileSocket** socketDT;
-	
-	int index;
 
     FileSystem(bool format);		// Initialize the file system.
 					// Must be called *after* "synchDisk" 
@@ -229,16 +209,6 @@ class FileSystem {
 	int recvTCP(int socketid,char* buffer, int len);
 	int findFreeSlotSocket();
 	int sendTCP(int socketid, char *buffer, int len);
-
-	//destructor file system
-	~FileSystem()
-	{
-		for (int i = 0; i < 20; ++i)
-		{
-			if (openf[i] != NULL) delete openf[i];
-		}
-		delete[] openf;
-	}
 
   private:
    OpenFile* freeMapFile;		// Bit map of free disk blocks,

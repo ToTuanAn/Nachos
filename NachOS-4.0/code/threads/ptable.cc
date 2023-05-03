@@ -42,7 +42,6 @@ int PTable::ExecUpdate(char* name) {
 
     // Tìm slot trống trong bảng Ptable.
     int index = this->GetFreeSlot();
-    cerr << index << '\n';
     // Check if have free slot
     if (index < 0) {
         DEBUG(dbgSys, "\nPTable::Exec :There is no free slot.\n");
@@ -55,7 +54,6 @@ int PTable::ExecUpdate(char* name) {
     pcb[index] = new PCB(index);
     pcb[index]->SetFileName(name);
     kernel->fileSystem->Renew(index);
-    cerr << "haohao" << '\n';
     // parrentID là processID của currentThread
     pcb[index]->parentID = kernel->currentThread->processID;
 
@@ -64,7 +62,6 @@ int PTable::ExecUpdate(char* name) {
 
     // Gọi bmsem->V()
     bmsem->V();
-    cerr << "hmhm" << "\n";
     // Trả về kết quả thực thi của PCB->Exec.
     return pid;
 }
@@ -105,11 +102,9 @@ int PTable::JoinUpdate(int id) {
         DEBUG(dbgSys, "\nPTable::Join : Can't not join.\n");
         return -1;
     }
-    cerr << "hklhl" << "\n";
 
     // Tăng numwait và gọi JoinWait() để chờ tiến trình con thực hiện.
     pcb[pcb[id]->parentID]->IncNumWait();
-    cerr << "hlmn" << "\n";
     pcb[id]->JoinWait();
 
     // Sau khi tiến trình con thực hiện xong, tiến trình đã được giải phóng
@@ -119,7 +114,6 @@ int PTable::JoinUpdate(int id) {
     // ExitRelease() để cho phép tiến trình con thoát.
     pcb[id]->ExitRelease();
 
-    cerr << "hlmn" << "\n";
     return exit_code;
 }
 

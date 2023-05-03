@@ -16,6 +16,7 @@ int main()
 
     srcFileId = Open(source, 1); 
 	
+	
 	if (srcFileId != -1) //If file is opened
 	{
 		//create dest file
@@ -45,6 +46,5 @@ int main()
 		Close(srcFileId); //close open file
 	}
 
-    Halt();
 	return 0;
 }

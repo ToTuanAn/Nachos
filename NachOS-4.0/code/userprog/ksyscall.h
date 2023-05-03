@@ -27,23 +27,62 @@ int SysAdd(int op1, int op2)
 }
 
 
-int SysCreate(char* filename){
-  if (strlen(filename) == 0)
-	{
-		return FALSE;
-	}
-	
-	if (filename == NULL)  //cannot read
-	{
-		return FALSE;
-	}
-		
-	if (!kernel->fileSystem->Create(filename)) //trigger Create of fileSystem, return -1 if fail
-	{
-    return FALSE;
-	}
+bool SysCreateFile(char* fileName) {
+    bool success;
+    int fileNameLength = strlen(fileName);
 
-  return TRUE;
+    if (fileNameLength == 0) {
+        DEBUG(dbgSys, "\nFile name can't be empty");
+        success = false;
+
+    } else if (fileName == NULL) {
+        DEBUG(dbgSys, "\nNot enough memory in system");
+        success = false;
+
+    } else {
+        DEBUG(dbgSys, "\nFile's name read successfully");
+        if (!kernel->fileSystem->Create(fileName)) {
+            DEBUG(dbgSys, "\nError creating file");
+            success = false;
+        } else {
+            success = true;
+        }
+    }
+
+    return success;
+}
+
+int SysOpen(char* fileName, int type) {
+    if (type != 0 && type != 1) return -1;
+
+    int id = kernel->fileSystem->Open(fileName, type);
+    if (id == -1) return -1;
+    DEBUG(dbgSys, "\nOpened file");
+    return id;
+}
+
+int SysClose(int id) { return kernel->fileSystem->Close(id); }
+
+int SysRead(char* buffer, int charCount, int fileId) {
+    if (fileId == 0) {
+        return kernel->synchConsoleIn->GetString(buffer, charCount);
+    }
+    return kernel->fileSystem->Read(buffer, charCount, fileId);
+}
+
+int SysWrite(char* buffer, int charCount, int fileId) {
+    if (fileId == 1) {
+        return kernel->synchConsoleOut->PutString(buffer, charCount);
+    }
+    return kernel->fileSystem->Write(buffer, charCount, fileId);
+}
+
+int SysSeek(int seekPos, int fileId) {
+    if (fileId <= 1) {
+        DEBUG(dbgSys, "\nCan't seek in console");
+        return -1;
+    }
+    return kernel->fileSystem->Seek(seekPos, fileId);
 }
 
 int SysRemove(char* filename){
@@ -64,32 +103,6 @@ int SysRemove(char* filename){
 
   return TRUE;
 
-}
-
-int SysOpen(char* filename, int type){
-  int freeSlot = kernel->fileSystem->FindFreeSlot();
-
-  if (freeSlot != -1) //if free slot
-	{
-		if (type == 0 || type == 1) //if type == 0 or type == 1
-		{
-			if ((kernel->fileSystem->openf[freeSlot] = kernel->fileSystem->Open(filename, type)) != NULL) //open success
-			{	
-				return freeSlot;
-			}
-		}
-	}
-
-  return -1;
-}
-
-int SysRead(char* buffer, int charCount) {
-  return kernel->synchConsoleIn->GetString(buffer, charCount);
-}
-
-
-int SysWrite(char* buffer, int charCount){
-  return kernel->synchConsoleOut->PutString(buffer, charCount);
 }
 
 void SysPrintChar(char character) {

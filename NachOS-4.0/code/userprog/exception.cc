@@ -83,247 +83,84 @@ int System2User(int virtAddr,int len,char* buffer)
 }
    
 void SC_CreateFile_func() {
-    int virtAddr;
-	char* filename;
+    int virtAddr = kernel->machine->ReadRegister(4);
+    char* fileName = User2System(virtAddr, MaxFileLength);
 
-	virtAddr = kernel->machine->ReadRegister(4); //read file address from reg R4
-	
-	//copy from User to System, maximum (32 + 1) bytes
-	filename = User2System(virtAddr, MaxFileLength);
+    if (SysCreateFile(fileName))
+        kernel->machine->WriteRegister(2, 0);
+    else
+        kernel->machine->WriteRegister(2, -1);
 
-	if(SysCreate(filename))
-	{
-		kernel->machine->WriteRegister(2, 0);
-	}else
-	{
-		kernel->machine->WriteRegister(2, -1);
-	}
-	
-	delete filename;
-    IncreasePC();
+    delete[] fileName;
 
-	return;
-}
-
-void SC_Add_func() {
-	/* Process SysAdd Systemcall*/
-	int result;
-	result = SysAdd(/* int op1 */(int)kernel->machine->ReadRegister(4),
-			/* int op2 */(int)kernel->machine->ReadRegister(5));
-
-	/* Prepare Result */
-	kernel->machine->WriteRegister(2, (int)result);
-	
 	IncreasePC();
-	return;
+    return;
 }
 
 void SC_Open_func() {
-	int virtAddr = kernel->machine->ReadRegister(4); //read file address from reg R4
-	int type = kernel->machine->ReadRegister(5); //read type from reg R5
-	char* filename;
-	filename = User2System(virtAddr, MaxFileLength); // 
-	
-	int freeSlot = SysOpen(filename, type);
+    int virtAddr = kernel->machine->ReadRegister(4);
+    char* fileName = User2System(virtAddr, MaxFileLength);
+    int type = kernel->machine->ReadRegister(5);
 
-	if(freeSlot != -1){
-		kernel->machine->WriteRegister(2, freeSlot);
-		//cerr << freeSlot << "\n";
-	}else{
-		kernel->machine->WriteRegister(2, -1); //cannot open file
-	}
+    kernel->machine->WriteRegister(2, SysOpen(fileName, type));
 
-	delete[] filename;
+    delete fileName;
 	IncreasePC();
-	return;
+    return;
 }
 
 void SC_Close_func() {
-	int fid = kernel->machine->ReadRegister(4); // get file id from reg 4
+    int id = kernel->machine->ReadRegister(4);
+    kernel->machine->WriteRegister(2, SysClose(id));
 
-	if (fid >= 0 && fid <= 19) //in range [0, 19]
-	{
-		if (kernel->fileSystem->openf[fid]) //open file success
-		{
-			delete kernel->fileSystem->openf[fid]; //delete memory open file
-			kernel->fileSystem->openf[fid] = NULL; //attach NULL
-			kernel->machine->WriteRegister(2, 0);
-		}
-	}
-	kernel->machine->WriteRegister(2, -1);
 	IncreasePC();
-	return;
+    return;
 }
 
 void SC_Read_func() {
-	int virtAddr = kernel->machine->ReadRegister(4); // read file address from reg R4
-	int charcount = kernel->machine->ReadRegister(5); // read charcount from reg R5
-	int id = kernel->machine->ReadRegister(6); // read fileId from reg R6 
-	
-	int OldPos;
-	int NewPos;
-	char *buf;
+    int virtAddr = kernel->machine->ReadRegister(4);
+    int charCount = kernel->machine->ReadRegister(5);
+    char* buffer = User2System(virtAddr, MaxFileLength);
+    int fileId = kernel->machine->ReadRegister(6);
 
-	if (id < 0 || id > 19) //out of range 0-20 file descriptors
-	{
-		kernel->machine->WriteRegister(2, -1);
-		IncreasePC();
-		return;
-	}
+    DEBUG(dbgFile,
+          "Read " << charCount << " chars from file " << fileId << "\n");
 
-	if (kernel->fileSystem->openf[id] == NULL) //file not exist
-	{
-		kernel->machine->WriteRegister(2, -1);
-		IncreasePC();
-		return;
-	}
+    kernel->machine->WriteRegister(2, SysRead(buffer, charCount, fileId));
+    System2User(virtAddr, charCount, buffer);
 
-	if (id == 1) //file stdout cannot read
-	{
-		kernel->machine->WriteRegister(2, -1);
-		IncreasePC();
-		return;
-	}
+    delete[] buffer;
 
-	OldPos = kernel->fileSystem->openf[id]->GetCurrentPos(); //get OldPos 
-
-	buf = User2System(virtAddr, charcount); 
-
-	if (id == 0)
-	{
-		int size = SysRead(buf, charcount);
-		System2User(virtAddr, size, buf);
-		kernel->machine->WriteRegister(2, size); // return number of byte read
-		delete buf;
-		IncreasePC();
-		return;
-	}
-
-	if ((kernel->fileSystem->openf[id]->Read(buf, charcount)) > 0)
-	{
-		NewPos = kernel->fileSystem->openf[id]->GetCurrentPos();
- 
-		System2User(virtAddr, NewPos - OldPos, buf); 
-		kernel->machine->WriteRegister(2, NewPos - OldPos);
-	}
-	else
-	{
-		kernel->machine->WriteRegister(2, -1);
-	}
-	delete buf;
 	IncreasePC();
-
-	return;
+    return;
 }
 
-void SC_Write_func(){
-	int virtAddr = kernel->machine->ReadRegister(4); // Lay dia chi cua tham so buffer tu thanh ghi so 4
-	int charcount = kernel->machine->ReadRegister(5); // Lay charcount tu thanh ghi so 5
-	int id = kernel->machine->ReadRegister(6); // Lay id cua file tu thanh ghi so 6
+void SC_Write_func() {
+    int virtAddr = kernel->machine->ReadRegister(4);
+    int charCount = kernel->machine->ReadRegister(5);
+    char* buffer = User2System(virtAddr, MaxFileLength);
+    int fileId = kernel->machine->ReadRegister(6);
 
-	int OldPos;
-	int NewPos;
-	char *buf;
+    DEBUG(dbgFile,
+          "Write " << charCount << " chars to file " << fileId << "\n");
 
-	// out of range
-	if (id < 0 || id > 19)
-	{
-		kernel->machine->WriteRegister(2, -1);
-		IncreasePC();
-		return;
-	}
+    kernel->machine->WriteRegister(2, SysWrite(buffer, charCount, fileId));
+    System2User(virtAddr, charCount, buffer);
 
-	// file not exist
-	if (kernel->fileSystem->openf[id] == NULL)
-	{
-		kernel->machine->WriteRegister(2, -1);
-		IncreasePC();
-		return;
-	}
+    delete[] buffer;
 
-	// cannot write stdin file
-	if (id == 0)
-	{
-		kernel->machine->WriteRegister(2, -1);
-		IncreasePC();
-		return;
-	}
-
-	// cannot write read only file
-	if (kernel->fileSystem->openf[id]->type == 1)
-	{
-		kernel->machine->WriteRegister(2, -1);
-		IncreasePC();
-		return;
-	}
-
-	OldPos = kernel->fileSystem->openf[id]->GetCurrentPos(); 
-	buf = User2System(virtAddr, charcount);  
-	
-	if (kernel->fileSystem->openf[id]->type == 0)
-	{
-		if ((kernel->fileSystem->openf[id]->Write(buf, charcount)) > 0)
-		{
-			NewPos = kernel->fileSystem->openf[id]->GetCurrentPos();
-			kernel->machine->WriteRegister(2, NewPos - OldPos);
-			//System2User(virtAddr, NewPos - OldPos, buf); 
-			delete buf;
-			IncreasePC();
-			return;
-		}
-	}
-
-	if (id == 1) // Xet truong hop con lai ghi file stdout (type quy uoc la 3)
-	{	
-		int size = SysWrite(buf, charcount);
-		kernel->machine->WriteRegister(2, size); // Tra ve so byte thuc su write duoc
-		delete buf;
-		IncreasePC();
-		return;
-	}
-
+	IncreasePC();
+    return;
 }
 
-void SC_Seek_func(){
-	int pos = kernel->machine->ReadRegister(4); // cursor pos from reg 4
-	int id = kernel->machine->ReadRegister(5); // id from reg 5
+void SC_Seek_func() {
+    int seekPos = kernel->machine->ReadRegister(4);
+    int fileId = kernel->machine->ReadRegister(5);
 
-	if (id < 0 || id > 19)
-	{
-		kernel->machine->WriteRegister(2, -1);
-		IncreasePC();
-		return;
-	}
+    kernel->machine->WriteRegister(2, SysSeek(seekPos, fileId));
 
-	// file not exist
-	if (kernel->fileSystem->openf[id] == NULL)
-	{
-		kernel->machine->WriteRegister(2, -1);
-		IncreasePC();
-		return;
-	}
-
-	if (id == 0 || id == 1)
-	{
-		kernel->machine->WriteRegister(2, -1);
-		IncreasePC();
-		return;
-	}
-
-	pos = (pos == -1) ? kernel->fileSystem->openf[id]->Length() : pos;
-
-	if (pos > kernel->fileSystem->openf[id]->Length() || pos < 0)
-	{
-		kernel->machine->WriteRegister(2, -1);
-	}
-	else
-	{
-		kernel->fileSystem->openf[id]->Seek(pos);
-		kernel->machine->WriteRegister(2, pos);
-	}
 	IncreasePC();
-
-	return;
+    return;
 }
 
 void SC_Remove_func(){
@@ -447,7 +284,7 @@ void SC_PrintString_func(){
 	int memPtr = kernel->machine->ReadRegister(4);  // read address of C-string
     char* buffer = User2System(memPtr,MaxFileLength);
 
-    SysWrite(buffer, strlen(buffer));
+    SysWrite(buffer, strlen(buffer), 1);
     delete[] buffer;
     IncreasePC();
 	return;
@@ -457,13 +294,14 @@ void SC_Exec_func(){
 	int pid;
 	int virtAddr = kernel->machine->ReadRegister(4); // read file address from reg R4
 	char* filename = User2System(virtAddr, MaxFileLength);
+	cerr << "Call: " << filename << endl;
 
 	if (strlen(filename) == 0){
 		kernel->machine->WriteRegister(2, -1);
 		IncreasePC();
 		return;
-	}	
-	cerr << "hmmm" << "\n";
+	}
+		
 	pid = kernel->pTab->ExecUpdate(filename);
 	
 	if (pid == -1){
@@ -479,13 +317,12 @@ void SC_Exec_func(){
 }
 
 void SC_Join_func(){
-	cerr << "Join" << "\n";
 	int id = kernel->machine->ReadRegister(4);
 	int joinId;
 
 	joinId = SysJoin(id);
+	cerr << "Join: " << joinId << "\n";
     kernel->machine->WriteRegister(2, joinId);
-	cerr << joinId << "\n";
 	
 	IncreasePC();
 	return;	
@@ -611,12 +448,6 @@ ExceptionHandler(ExceptionType which)
 				case SC_Create:
 				{
 					SC_CreateFile_func();
-					break;
-				}
-				case SC_Add:
-				{
-					
-					SC_Add_func();
 					break;
 				}
 				case SC_Open:

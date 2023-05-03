@@ -11,6 +11,7 @@ int main()
 	
 	openFileId = Open(fileName, 1); 
 	
+	
 	if (openFileId != -1) //if file is opened
 	{
 		// Seek to the end of src file to get the src file size
@@ -26,7 +27,6 @@ int main()
 		}
 		Close(openFileId); //close the file=
 	}
-    
-    Halt();
+
 	return 0;
 }

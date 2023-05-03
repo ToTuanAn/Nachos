@@ -400,6 +400,34 @@ void SC_Signal_func() {
     return;
 }
 
+void SC_ExecV_func(){
+	int pid;
+	int virtAddr = kernel->machine->ReadRegister(4);
+	int parameters = kernel->machine->ReadRegister(5);
+
+	char* filename = User2System(virtAddr, MaxFileLength);
+	cerr << "Call: " << filename << endl;
+
+	if (strlen(filename) == 0){
+		kernel->machine->WriteRegister(2, -1);
+		IncreasePC();
+		return;
+	}
+		
+	pid = kernel->pTab->ExecUpdate(filename);
+	
+	if (pid == -1){
+		kernel->machine->WriteRegister(2, -1);
+		IncreasePC();
+		return;
+	}
+
+	kernel->machine->WriteRegister(2, pid);
+
+	IncreasePC();
+    return;
+}	
+
 
 
 //----------------------------------------------------------------------
@@ -435,7 +463,11 @@ ExceptionHandler(ExceptionType which)
 	//cerr << "Received Exception " << which << " type: " << type << "\n";
 
     switch (which) {
-
+		case NoException:{  // return control to kernel{
+            kernel->interrupt->setStatus(SystemMode);
+            DEBUG(dbgSys, "Switch to system mode\n");
+            break;
+		}
     	case SyscallException:
 		{
 			switch(type) 
@@ -539,6 +571,11 @@ ExceptionHandler(ExceptionType which)
 				case SC_Wait:
 				{
 					SC_Wait_func();
+					break;
+				}
+				case SC_ExecV:
+				{
+					SC_ExecV_func();
 					break;
 				}
 				default:

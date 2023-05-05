@@ -6,7 +6,7 @@ int main() {
     int multex = CreateSemaphore("cshsem", 1);
 
     newProc1 = Exec("cat"); // Project 01
-    newProc2 = Exec("copy"); // Project 01
+    newProc2 = Exec("cat"); // Project 01
 
     Join(newProc1);
     Join(newProc2);

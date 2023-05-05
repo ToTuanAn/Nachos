@@ -59,16 +59,13 @@ int PCB::Exec(char* filename, int id) {
         return -1;    // Tra ve -1 neu that bai
     }
 
-    //  Đặt processID của thread này là id.
+    //  Set processID of this thread is id.
     this->thread->processID = id;
-    // Đặt parrentID của thread này là processID của thread gọi thực thi Exec
+    // Set parrentID of this thread is processID of thread calling Exec
     this->parentID = kernel->currentThread->processID;
-    // Gọi thực thi Fork(StartProcess_2,id) => Ta cast thread thành kiểu int,
-    // sau đó khi xử ký hàm StartProcess ta cast Thread về đúng kiểu của nó.
+    // Call Fork(StartProcess_2,id) to execute the new thread; 
+    // Cast the thread to int, then cast it back to its original type in the StartProcess function
 
-    // Không được sử dụng biến id ở đây, vì biến id là biến cục bộ,
-    // nên khi hàm này kết thúc thì giá trị của biến này cũng bị xóa
-    // Đừng hỏi tôi đã mất bao lâu để nhận ra điều này :)
     this->thread->Fork(StartProcess_2, &this->thread->processID);
 
     multex->V();
@@ -81,24 +78,24 @@ int PCB::GetID() { return thread->processID; }
 int PCB::GetNumWait() { return numwait; }
 
 void PCB::JoinWait() {
-    // Gọi joinsem->P() để tiến trình chuyển sang trạng thái block và ngừng lại,
-    // chờ JoinRelease để thực hiện tiếp.
+    // Call joinsem->P() process change to block state and stop,
+    // Wait JoinRelease to unlock.
     joinsem->P();
 }
 
 void PCB::ExitWait() {
-    // Gọi exitsem-->V() để tiến trình chuyển sang trạng thái block và ngừng
-    // lại, chờ ExitReleaseđể thực hiện tiếp.
+    // Call exitsem->V() process change to block state and stop,
+    // Wait ExitRelease to unlock.
     exitsem->P();
 }
 
 void PCB::JoinRelease() {
-    // Gọi joinsem->V() để giải phóng tiến trình gọi JoinWait().
+    // Call joinsem->V() to release JoinWait().
     joinsem->V();
 }
 
 void PCB::ExitRelease() {
-    // Gọi exitsem->V() để giải phóng tiến trình đang chờ.
+    // Call exitsem->V() to release ExitWait().
     exitsem->V();
 }
 

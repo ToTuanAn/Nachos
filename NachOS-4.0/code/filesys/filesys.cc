@@ -240,21 +240,21 @@ FileSystem::Open(char *name)
 }
 
 
-OpenFile* FileSystem::Open(char *name, int type)
-{
-	int freeSlot = this->FindFreeSlot();
-	Directory *directory = new Directory(NumDirEntries);
-	OpenFile *openFile = NULL;
-	int sector;
+// OpenFile* FileSystem::Open(char *name, int type)
+// {
+// 	int freeSlot = this->FindFreeSlot();
+// 	Directory *directory = new Directory(NumDirEntries);
+// 	OpenFile *openFile = NULL;
+// 	int sector;
 
-	// DEBUG('f', "Opening file %s\n", name);
-	directory->FetchFrom(directoryFile);
-	sector = directory->Find(name);
-	if (sector >= 0)
-		openFile = new OpenFile(sector, type);	// name was found in directory 
-	delete directory;
-	return openFile;				// return NULL if not found
-}
+// 	// DEBUG('f', "Opening file %s\n", name);
+// 	directory->FetchFrom(directoryFile);
+// 	sector = directory->Find(name);
+// 	if (sector >= 0)
+// 		openFile = new OpenFile(sector, type);	// name was found in directory 
+// 	delete directory;
+// 	return openFile;				// return NULL if not found
+// }
 
 //----------------------------------------------------------------------
 // FileSystem::Remove

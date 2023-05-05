@@ -38,6 +38,8 @@
 #include "filetable.h"
 #include "openfile.h"
 
+#define MAX_PROCESS 10
+
 #ifdef FILESYS_STUB 		// Temporarily implement file system calls as 
 				// calls to UNIX, until the real file system
 				// implementation is available
@@ -58,16 +60,16 @@ class FileSystem {
 	FileTable **fileTable;
 
     FileSystem() {
-        fileTable = new FileTable *[20];
-		socketDT = new OpenFileSocket*[20];
-        for (int i = 0; i < 20; i++) {
+        fileTable = new FileTable *[MAX_PROCESS];
+		socketDT = new OpenFileSocket*[MAX_PROCESS];
+        for (int i = 0; i < MAX_PROCESS; i++) {
             fileTable[i] = new FileTable;
 			socketDT[i] = NULL;
         }
     }
 
     ~FileSystem() {
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < MAX_PROCESS; i++) {
             delete fileTable[i];
 			delete socketDT[i];
         }
@@ -87,7 +89,7 @@ class FileSystem {
     int FileTableIndex();
 
     void Renew(int id) {
-        for (int i = 0; i < SIZE_MAX; i++) {
+        for (int i = 0; i < FILE_MAX; i++) {
             fileTable[id]->Remove(i);
         }
     }
@@ -194,7 +196,7 @@ class FileSystem {
 
     OpenFile* Open(char *name); 	// Open a file (UNIX open)
 
-	OpenFile* Open(char *name, int type); 	// Open a file (UNIX open)
+	//OpenFile* Open(char *name, int type); 	// Open a file (UNIX open)
 
     bool Remove(char *name);  		// Delete a file (UNIX unlink)
 

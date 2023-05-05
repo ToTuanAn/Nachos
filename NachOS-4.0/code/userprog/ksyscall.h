@@ -117,7 +117,6 @@ int SysCreateSemaphore(char* name, int initialValue) {
     int res = kernel->semTab->Create(name, initialValue);
 
     if (res == -1) {
-        DEBUG('a', "\nError creating semaphore");
         delete[] name;
         return -1;
     }
@@ -129,7 +128,6 @@ int SysWait(char* name) {
     int res = kernel->semTab->Wait(name);
 
     if (res == -1) {
-        DEBUG('a', "\nSemaphore not found");
         delete[] name;
         return -1;
     }
@@ -141,7 +139,6 @@ int SysSignal(char* name) {
     int res = kernel->semTab->Signal(name);
 
     if (res == -1) {
-        DEBUG('a', "\nSemaphore not found");
         delete[] name;
         return -1;
     }

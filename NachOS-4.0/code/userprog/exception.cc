@@ -291,7 +291,7 @@ void SC_PrintString_func(){
 }
 
 void SC_Exec_func(){
-	int pid;
+	int processID;
 	int virtAddr = kernel->machine->ReadRegister(4); // read file address from reg R4
 	char* filename = User2System(virtAddr, MaxFileLength);
 	cerr << "Call: " << filename << endl;
@@ -302,15 +302,15 @@ void SC_Exec_func(){
 		return;
 	}
 		
-	pid = kernel->pTab->ExecUpdate(filename);
+	processID = kernel->pTab->ExecUpdate(filename);
 	
-	if (pid == -1){
+	if (processID == -1){
 		kernel->machine->WriteRegister(2, -1);
 		IncreasePC();
 		return;
 	}
 
-	kernel->machine->WriteRegister(2, pid);
+	kernel->machine->WriteRegister(2, processID);
 
 	IncreasePC();
 	return;
@@ -318,11 +318,11 @@ void SC_Exec_func(){
 
 void SC_Join_func(){
 	int id = kernel->machine->ReadRegister(4);
-	int joinId;
+	int joinID;
 
-	joinId = SysJoin(id);
-	cerr << "Join: " << joinId << "\n";
-    kernel->machine->WriteRegister(2, joinId);
+	joinID = SysJoin(id);
+	cerr << "Join: " << joinID << "\n";
+    kernel->machine->WriteRegister(2, joinID);
 	
 	IncreasePC();
 	return;	
@@ -330,7 +330,11 @@ void SC_Join_func(){
 
 void SC_Exit_func() {
     int id = kernel->machine->ReadRegister(4);
-    kernel->machine->WriteRegister(2, SysExit(id));
+	int exitCode;
+
+	exitCode = SysExit(id);
+	cerr << "Exit Code: " << exitCode << "\n";
+    kernel->machine->WriteRegister(2, exitCode);
 
 	IncreasePC();
     return;
@@ -338,21 +342,21 @@ void SC_Exit_func() {
 
 void SC_CreateSemaphore_func() {
     int virtAddr = kernel->machine->ReadRegister(4);
-    int semval = kernel->machine->ReadRegister(5);
+    int semVal = kernel->machine->ReadRegister(5);
 
-    char* name = User2System(virtAddr,MaxFileLength);
-    if (name == NULL) {
+    char* semName = User2System(virtAddr,MaxFileLength);
+    if (semName == NULL) {
         DEBUG(dbgSys, "\n Not enough memory in System");
         ASSERT(false);
         kernel->machine->WriteRegister(2, -1);
-        delete[] name;
+        delete[] semName;
 
 		IncreasePC();
         return;
     }
 
-    kernel->machine->WriteRegister(2, SysCreateSemaphore(name, semval));
-    delete[] name;
+    kernel->machine->WriteRegister(2, SysCreateSemaphore(semName, semVal));
+    delete[] semName;
 
 	IncreasePC();
     return;
@@ -361,19 +365,19 @@ void SC_CreateSemaphore_func() {
 void SC_Wait_func() {
     int virtAddr = kernel->machine->ReadRegister(4);
 
-    char* name = User2System(virtAddr, MaxFileLength);
-    if (name == NULL) {
+    char* semName = User2System(virtAddr, MaxFileLength);
+    if (semName == NULL) {
         DEBUG(dbgSys, "\n Not enough memory in System");
         ASSERT(false);
         kernel->machine->WriteRegister(2, -1);
-        delete[] name;
+        delete[] semName;
 
 		IncreasePC();
         return;
     }
 
-    kernel->machine->WriteRegister(2, SysWait(name));
-    delete[] name;
+    kernel->machine->WriteRegister(2, SysWait(semName));
+    delete[] semName;
 
 	IncreasePC();
     return;
@@ -382,26 +386,26 @@ void SC_Wait_func() {
 void SC_Signal_func() {
     int virtAddr = kernel->machine->ReadRegister(4);
 
-    char* name = User2System(virtAddr, MaxFileLength);
-    if (name == NULL) {
+    char* semName = User2System(virtAddr, MaxFileLength);
+    if (semName == NULL) {
         DEBUG(dbgSys, "\n Not enough memory in System");
         ASSERT(false);
         kernel->machine->WriteRegister(2, -1);
-        delete[] name;
+        delete[] semName;
 
 		IncreasePC();
         return;
     }
 
-    kernel->machine->WriteRegister(2, SysSignal(name));
-    delete[] name;
+    kernel->machine->WriteRegister(2, SysSignal(semName));
+    delete[] semName;
 
 	IncreasePC();
     return;
 }
 
 void SC_ExecV_func(){
-	int pid;
+	int processID;
 	int virtAddr = kernel->machine->ReadRegister(4);
 	int parameters = kernel->machine->ReadRegister(5);
 
@@ -414,15 +418,15 @@ void SC_ExecV_func(){
 		return;
 	}
 		
-	pid = kernel->pTab->ExecUpdate(filename);
+	processID = kernel->pTab->ExecUpdate(filename);
 	
-	if (pid == -1){
+	if (processID == -1){
 		kernel->machine->WriteRegister(2, -1);
 		IncreasePC();
 		return;
 	}
 
-	kernel->machine->WriteRegister(2, pid);
+	kernel->machine->WriteRegister(2, processID);
 
 	IncreasePC();
     return;

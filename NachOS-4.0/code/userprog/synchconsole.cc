@@ -9,16 +9,6 @@
 #include "copyright.h"
 #include "synchconsole.h"
 
-
-static Semaphore *synchReadAvail;
-static Semaphore *synchWriteAvail;
-static Semaphore *RLineBlock;
-static Semaphore *WLineBlock;
-
-
-static void SynchReadFunct(int arg) { synchReadAvail->V(); }
-static void SynchWriteFunct(int arg) { synchWriteAvail->V(); }
-
 //----------------------------------------------------------------------
 // SynchConsoleInput::SynchConsoleInput
 //      Initialize synchronized access to the keyboard

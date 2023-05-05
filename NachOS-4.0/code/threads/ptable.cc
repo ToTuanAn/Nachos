@@ -21,26 +21,26 @@ PTable::~PTable() {
 }
 
 int PTable::ExecUpdate(char* name) {
-    // Gọi mutex->P(); để giúp tránh tình trạng nạp 2 tiến trình cùng 1 lúc.
+    // Call mutex->P() to prevent two threads from being loaded at the same time
     bmsem->P();
 
-    // Kiểm tra tính hợp lệ của chương trình “name”.
-    // Kiểm tra sự tồn tại của chương trình “name” bằng cách gọi phương thức
-    // Open của lớp fileSystem.
+    // Validate the “name”.
+    // Check existance of “name” calling syscall
+    // Open class fileSystem.
     if (name == NULL) {
         DEBUG(dbgSys, "\nPTable::Exec : Can't not execute name is NULL.\n");
         bmsem->V();
         return -1;
     }
-    // So sánh tên chương trình và tên của currentThread để chắc chắn rằng
-    // chương trình này không gọi thực thi chính nó.
+    
+    // Make sure not exec itself
     if (strcmp(name, kernel->currentThread->getName()) == 0) {
         DEBUG(dbgSys, "\nPTable::Exec : Can't not execute itself.\n");
         bmsem->V();
         return -1;
     }
 
-    // Tìm slot trống trong bảng Ptable.
+    // FInd slot in Ptable.
     int index = this->GetFreeSlot();
     // Check if have free slot
     if (index < 0) {
@@ -49,25 +49,24 @@ int PTable::ExecUpdate(char* name) {
         return -1;
     }
 
-    // Nếu có slot trống thì khởi tạo một PCB mới với processID chính là index
-    // của slot này
+    // If empty slot then create new index for PCB
     pcb[index] = new PCB(index);
     pcb[index]->SetFileName(name);
     kernel->fileSystem->Renew(index);
-    // parrentID là processID của currentThread
+    // parrentID is processID of currentThread
     pcb[index]->parentID = kernel->currentThread->processID;
 
-    // Gọi thực thi phương thức Exec của lớp PCB.
+    //Call Exec of PCB.
     int pid = pcb[index]->Exec(name, index);
 
-    // Gọi bmsem->V()
+    // Call bmsem->V()
     bmsem->V();
-    // Trả về kết quả thực thi của PCB->Exec.
+    // return PCB->Exec.
     return pid;
 }
 
 int PTable::ExitUpdate(int exitcode) {
-    // Nếu tiến trình gọi là main process thì gọi Halt().
+    //If main process then Halt
     int id = kernel->currentThread->processID;
     if (id == 0) {
         kernel->currentThread->FreeSpace();
@@ -80,12 +79,12 @@ int PTable::ExitUpdate(int exitcode) {
         return -1;
     }
 
-    // Ngược lại gọi SetExitCode để đặt exitcode cho tiến trình gọi.
+    //get exit code.
     pcb[id]->SetExitCode(exitcode);
     pcb[pcb[id]->parentID]->DecNumWait();
 
-    // Gọi JoinRelease để giải phóng tiến trình cha đang đợi nó (nếu có)
-    // và ExitWait() để xin tiến trình cha cho phép thoát.
+    //Call JoinRelease to release parent Join
+    //CallExitWait() to exit from parent
     pcb[id]->JoinRelease();
     pcb[id]->ExitWait();
 
@@ -94,24 +93,23 @@ int PTable::ExitUpdate(int exitcode) {
 }
 
 int PTable::JoinUpdate(int id) {
-    // Ta kiểm tra tính hợp lệ của processID id và kiểm tra tiến trình gọi Join
-    // có phải là cha của tiến trình có processID là id hay không. Nếu không
-    // thỏa, ta báo lỗi hợp lý và trả về -1.
+    // we check processID id is valid, check Join call
+    // is the parent of processID. 
     if (id < 0 || id >= psize || pcb[id] == NULL ||
         pcb[id]->parentID != kernel->currentThread->processID) {
         DEBUG(dbgSys, "\nPTable::Join : Can't not join.\n");
         return -1;
     }
 
-    // Tăng numwait và gọi JoinWait() để chờ tiến trình con thực hiện.
+    // Increase numwait and call JoinWait() wait child process to finish
     pcb[pcb[id]->parentID]->IncNumWait();
     pcb[id]->JoinWait();
 
-    // Sau khi tiến trình con thực hiện xong, tiến trình đã được giải phóng
+    //child process finish
     
-    // Xử lý exitcode.
+    //get exit code
     int exit_code = pcb[id]->GetExitCode();
-    // ExitRelease() để cho phép tiến trình con thoát.
+    //Exit child process
     pcb[id]->ExitRelease();
 
     return exit_code;

@@ -106,16 +106,16 @@ AddrSpace::AddrSpace(char *fileName) {
     NoffHeader noffH;
     unsigned int i, size, j, offset;
     unsigned int numCodePage,
-        numDataPage;  // số trang cho phần code và phần initData
+        numDataPage;  // page for code and init Data
     int lastCodePageSize, lastDataPageSize, firstDataPageSize,
-        tempDataSize;  // kích thước ghi vào trang cuối Code, initData, và trang
-                       // đầu của initData
+        tempDataSize;  // final Code Pagesize, initData, and
+                       // firstPage of initData
 
     if (executable == NULL) {
         DEBUG(dbgFile, "\n Error opening file.");
         return;
     }
-    //đọc header của file
+    //read file header
     executable->ReadAt((char *)&noffH, sizeof(noffH), 0);
     if ((noffH.noffMagic != NOFFMAGIC) &&
         (WordToHost(noffH.noffMagic) == NOFFMAGIC))
@@ -156,7 +156,7 @@ AddrSpace::AddrSpace(char *fileName) {
         pageTable[i].readOnly = FALSE;  // if the code segment was entirely on
         // a separate page, we could set its
         // pages to be read-only
-        // xóa các trang này trên memory
+        // delete page 
         bzero(&(kernel->machine
                     ->mainMemory[pageTable[i].physicalPage * PageSize]),
               PageSize);
